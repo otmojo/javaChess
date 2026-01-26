@@ -42,11 +42,13 @@ PostgreSQL を利用してユーザー情報や対局履歴などを管理しま
     src/main/java/util/DBConnection.java などで DB 接続設定を行います。
 
     環境変数を使う場合の例:
+   
+   ```java
     private static final String URL = System.getenv("CHESS_DB_URL");   // e.g. jdbc:postgresql://localhost:5432/chess_db
     private static final String USER = System.getenv("CHESS_DB_USER"); // e.g. postgres
     private static final String PASS = System.getenv("CHESS_DB_PASS"); // e.g. your_password
 
-3. ビルド & 実行
+4. ビルド & 実行
 
 ```bash
 # ビルド

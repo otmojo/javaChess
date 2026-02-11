@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import model.dao.MoveDAO;
 import model.entity.Board;
 import model.logic.RuleEngine;
+import com.chess.RoomManager;
 
 @WebServlet("/game")
 public class GameServlet extends HttpServlet {
@@ -26,7 +27,12 @@ public class GameServlet extends HttpServlet {
         
             if ("reset".equals(request.getParameter("action"))) {
                 HttpSession session = request.getSession();
-                session.setAttribute("board", new Board()); 
+                String roomId = "game1";
+                Board newBoard = new Board();
+                RoomManager.setBoard(roomId, newBoard);
+                RoomManager.setTurn(roomId, "white");
+                
+                session.setAttribute("board", newBoard); 
                 session.setAttribute("turn", "white");      
                 // save one round
                 try {
@@ -44,13 +50,19 @@ public class GameServlet extends HttpServlet {
         System.out.println("go into doGet route /game");
         HttpSession session = request.getSession();
 
-        // 1. default
-        Board board = (Board) session.getAttribute("board");
+        String roomId = "game1";
+        Board board = RoomManager.getBoard(roomId);
+        String turn = RoomManager.getTurn(roomId);
+
         if (board == null) {
             board = new Board();
-            session.setAttribute("board", board);
-            session.setAttribute("turn", "white");
+            RoomManager.setBoard(roomId, board);
+            RoomManager.setTurn(roomId, "white");
+            turn = "white";
         }
+        
+        session.setAttribute("board", board);
+        session.setAttribute("turn", turn);
 
         // 2. according to action to load history
         String action = request.getParameter("action");
@@ -226,8 +238,14 @@ public class GameServlet extends HttpServlet {
             sessionMoves.add(rec);
 
             // --- 4. exchange the round ---
+            String nextTurn = "white".equals(turn) ? "black" : "white";
             session.setAttribute("board", board);
-            session.setAttribute("turn", "white".equals(turn) ? "black" : "white");
+            session.setAttribute("turn", nextTurn);
+
+            // 同步到 RoomManager
+            String roomId = "game1";
+            RoomManager.setBoard(roomId, board);
+            RoomManager.setTurn(roomId, nextTurn);
 
             response.setStatus(200);
             response.getWriter().write(status); // return OK or GAMEOVER

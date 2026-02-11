@@ -29,6 +29,19 @@
     <%
         Board b = (Board) session.getAttribute("board");
         String turn = (String) session.getAttribute("turn");
+
+        String roomId = "game1"; // 实际可从参数获取
+        Integer mySide = (Integer) session.getAttribute("mySide");
+        if (mySide == null) {
+            mySide = com.chess.RoomManager.joinRoom(roomId);
+            session.setAttribute("mySide", mySide);
+        }
+
+        if (mySide == 0) {
+            out.println("<div style='color:red; margin-top:50px;'><h3>对不起，房间已满！</h3></div>");
+            return;
+        }
+
         if (b == null) {
     %>
         <div style="color:red; margin-top:50px;">
@@ -49,6 +62,7 @@
         %>
             <div class="square <%=color%>" 
                  id="sq-<%=r%>-<%=c%>" 
+                 data-piece="<%= piece %>"
                  onclick="handleClick(<%=r%>,<%=c%>)">
                 <%= PieceUI.getUnicode(piece) %>
             </div>
@@ -66,16 +80,25 @@
     <% } %>
 
     <script>
+    const MY_SIDE = <%= mySide %>; // 1代表白，2代表黑
+    const ROOM_ID = "<%= roomId %>";
+    let lastMoveFromServer = sessionStorage.getItem("lastMove") || "";
     let firstPos = null;
 
     function handleClick(r, c) {
         console.log("Clicked:", r, c);
         const currentId = "sq-" + r + "-" + c;
         const square = document.getElementById(currentId);
+        const piece = square.getAttribute("data-piece");
 
         if (!firstPos) {
             // Step 1: Select the starting point
-            if (square.innerText.trim() === "") return;
+            if (!piece || piece === "") return;
+
+            // 权限检查：1(白) 只能动大写字母；2(黑) 只能动小写字母
+            const isWhitePiece = piece[0] === piece[0].toUpperCase();
+            if (MY_SIDE === 1 && !isWhitePiece) return;
+            if (MY_SIDE === 2 && isWhitePiece) return;
             
             firstPos = {r: r, c: c};
             square.classList.add('selected');
@@ -87,6 +110,8 @@
                 return;
             }
 
+            const moveStr = firstPos.r + "," + firstPos.c + "-" + r + "," + c;
+            
             const params = new URLSearchParams();
             params.append('fR', firstPos.r);
             params.append('fC', firstPos.c);
@@ -98,16 +123,23 @@
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: params.toString()
             })
-            .then(res => res.text()) // Get the text returned by the server 
+            .then(res => res.text()) 
             .then(status => {
-                if (status.includes("GAMEOVER")) {
-                    const winner = status.split("_")[1] === "white" ? "白" : "黒";
-                    alert("勝負あり！" + winner + "WON！");
-                    location.reload(); 
-                } else if (status === "OK") {
-                    location.reload();
+                if (status.includes("GAMEOVER") || status === "OK") {
+                    // 同步到 RoomManager
+                    const chessParams = new URLSearchParams();
+                    chessParams.append('roomId', ROOM_ID);
+                    chessParams.append('move', moveStr);
+                    fetch('chessAction', { method: 'POST', body: chessParams })
+                    .then(() => {
+                        sessionStorage.setItem("lastMove", moveStr);
+                        if (status.includes("GAMEOVER")) {
+                            const winner = status.split("_")[1] === "white" ? "白" : "黒";
+                            alert("勝負あり！" + winner + "WON！");
+                        }
+                        location.reload();
+                    });
                 } else {
-                    // Handle error messages returned by the backend (e.g., not your turn)
                     alert(status);
                     location.reload();
                 }
@@ -118,6 +150,18 @@
             });
         }
     }
+
+    // 开启轮询检查对方棋步
+    setInterval(function() {
+        fetch('chessAction?roomId=' + ROOM_ID)
+            .then(res => res.text())
+            .then(move => {
+                if (move !== "" && move !== lastMoveFromServer) {
+                    sessionStorage.setItem("lastMove", move);
+                    location.reload();
+                }
+            });
+    }, 1500);
 </script>
 </body>
 </html>

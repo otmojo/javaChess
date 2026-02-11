@@ -63,8 +63,6 @@
     <button onclick="location.href='game?action=history'">📜 HISTORY</button>
 </div>
 
-
-</div>
     <% } %>
 
     <script>

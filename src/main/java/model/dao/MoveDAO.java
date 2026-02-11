@@ -1,7 +1,6 @@
 package model.dao;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,19 +8,14 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import util.DBConnection;
+
 public class MoveDAO {
-    // for chess_db
-    private String url = "jdbc:postgresql://localhost:5432/chess_db";
-    private String user = "postgres"; 
-    private String password = "hal"; //delete this before sharing
 
     public void saveMove(String player, String piece, int fr, int fc, int tr, int tc) {
         try {
-            // just in case forced load PostgreSQL driver
-            Class.forName("org.postgresql.Driver");
-
             String sql = "INSERT INTO move_history (player, piece, from_pos, to_pos) VALUES (?, ?, ?, ?)";
-            try (Connection conn = DriverManager.getConnection(url, user, password);
+            try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, player);
                 ps.setString(2, piece);
@@ -31,14 +25,11 @@ public class MoveDAO {
                 if (updated > 0) {
                     System.out.println("DB: steps are saved in the database (player=" + player + ", piece=" + piece + ")");
                 } else {
-                    System.err.println("DB: 插入未生效 (executeUpdate returned 0)");
+                    System.err.println("DB: insert did not take effect (executeUpdate returned 0)");
                 }
             }
-        } catch (ClassNotFoundException e) {
-            System.err.println("找不到 PostgreSQL 驱动 JAR 包，请检查 WEB-INF/lib！");
-            e.printStackTrace();
         } catch (SQLException e) {
-            System.err.println("DB错误: " + e.getMessage());
+            System.err.println("DB error: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -48,10 +39,10 @@ public class MoveDAO {
      */
     public void clearMoves() {
         String sql = "DELETE FROM move_history";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement()) {
             int removed = st.executeUpdate(sql);
-            System.out.println("DB: MOVES CLEARED，DELETED LINE=" + removed);
+            System.out.println("DB: MOVES CLEARED, DELETED LINE=" + removed);
         } catch (SQLException e) {
             System.err.println("DB ERR CLEARED: " + e.getMessage());
             e.printStackTrace();
@@ -61,7 +52,7 @@ public class MoveDAO {
     public List<String> getHistory() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT * FROM move_history ORDER BY id ASC";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -86,12 +77,7 @@ public class MoveDAO {
     public List<String[]> getMoves() {
         List<String[]> list = new ArrayList<>();
         String sql = "SELECT * FROM move_history ORDER BY id ASC";
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("找不到 PostgreSQL 驱动 JAR 包，请检查 WEB-INF/lib！");
-        }
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {

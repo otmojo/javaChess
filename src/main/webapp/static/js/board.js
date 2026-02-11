@@ -1,9 +1,9 @@
 let selectedSquare = null;
 
 function handleSquareClick(row, col) {
-    const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
-    const pieceContent = square.querySelector('.piece-content').innerText.trim();
-    
+    const square = document.getElementById('sq-' + row + '-' + col);
+    const pieceContent = square.innerText.trim();
+
     // if chose a square
     if (selectedSquare) {
         // double click for cancelling
@@ -11,8 +11,7 @@ function handleSquareClick(row, col) {
             clearSelection();
             return;
         }
-        
-        
+
 
         movePiece(selectedSquare.row, selectedSquare.col, row, col);
         clearSelection();
@@ -33,11 +32,10 @@ function clearSelection() {
 
 function movePiece(fRow, fCol, tRow, tCol) {
     const params = new URLSearchParams();
-    params.append('fRow', fRow);
-    params.append('fCol', fCol);
-    params.append('tRow', tRow);
-    params.append('tCol', tCol);
-    // level default 0
+    params.append('fR', fRow);
+    params.append('fC', fCol);
+    params.append('tR', tRow);
+    params.append('tC', tCol);
 
     fetch('game', {
         method: 'POST',
@@ -46,14 +44,17 @@ function movePiece(fRow, fCol, tRow, tCol) {
         },
         body: params
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            updateBoard(data.board);
-            updateTurn(data.turn);
-            showMessage("");
+    .then(response => response.text())
+    .then(status => {
+        if (status.includes("GAMEOVER")) {
+            const winner = status.split("_")[1] === "white" ? "白" : "黒";
+            alert("勝負あり！" + winner + " WON！");
+            location.reload();
+        } else if (status === "OK") {
+            location.reload();
         } else {
-            showMessage(data.message);
+            showMessage(status);
+            location.reload();
         }
     })
     .catch(error => {
@@ -65,19 +66,21 @@ function movePiece(fRow, fCol, tRow, tCol) {
 function updateBoard(grid) {
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
-             const square = document.querySelector(`.square[data-row="${r}"][data-col="${c}"]`);
+             const square = document.getElementById('sq-' + r + '-' + c);
              const piece = grid[r][c];
-             square.querySelector('.piece-content').innerText = piece;
+             square.innerText = piece;
         }
     }
 }
 
 function updateTurn(turn) {
-    const turnIndicator = document.querySelector('.turn-indicator');
-    if (turn === 'white') {
-        turnIndicator.innerText = "手番: 白 (White)";
-    } else {
-        turnIndicator.innerText = "手番: 黒 (Black)";
+    const turnIndicator = document.querySelector('.info');
+    if (turnIndicator) {
+        if (turn === 'white') {
+            turnIndicator.innerText = "手番: 白 (White)";
+        } else {
+            turnIndicator.innerText = "手番: 黒 (Black)";
+        }
     }
 }
 

@@ -1,17 +1,14 @@
 package test;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import util.DBConnection;
+
 public class PgTest {
     public static void main(String[] args) throws Exception {
-        String url = "jdbc:postgresql://localhost:5432/postgres";
-        String user = "postgres";
-        String pass = "hal";
-
-        try (Connection conn = DriverManager.getConnection(url, user, pass);
+        try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery("select now()")) {
 

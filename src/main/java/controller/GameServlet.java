@@ -130,7 +130,7 @@ public class GameServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        // 1. 必须放在第一行的编码设置
+        // 1. Encoding settings
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/plain; charset=UTF-8");
@@ -143,7 +143,7 @@ public class GameServlet extends HttpServlet {
         
         System.out.println("got demand to move -> From(" + fR + "," + fC + ") To(" + tR + "," + tC + ")");
 
-        // 3. 参数校验
+        // 3. Parameter validation
         if (fR == null || fC == null || tR == null || tC == null) {
             System.err.println("ERROR: 参数丢失，POST 数据解析失败！");
             response.setStatus(400);
@@ -159,7 +159,7 @@ public class GameServlet extends HttpServlet {
                 response.getWriter().write("Error: Board not initialized.");
                 return;
             }
-            String turn = (String) session.getAttribute("turn"); // 当前该谁走 "white" 或 "black"
+            String turn = (String) session.getAttribute("turn"); // currently which one is allowed to move
 
             int rF = Integer.parseInt(fR);
             int cF = Integer.parseInt(fC);
@@ -170,18 +170,17 @@ public class GameServlet extends HttpServlet {
             String movingPiece = grid[rF][cF]; // the chosen one
             String targetPiece = grid[rT][cT]; // aim
 
-            // --- 1. 基础校验：起始格必须有棋子 ---
+            // --- 1. Basic check: The starting square must have a piece. ---
             if (movingPiece == null || movingPiece.equals("")) {
                 response.setStatus(400);
                 response.getWriter().write("Error: No piece at source square.");
                 return;
             }
 
-            // --- 2. 回合校验 ---
-            // 假设大写是白棋，小写是黑棋（根据你的 PieceUI 逻辑调整）
+            // --- 2. Round verification ---
             boolean isWhitePiece = Character.isUpperCase(movingPiece.charAt(0));
             if (("white".equals(turn) && !isWhitePiece) || ("black".equals(turn) && isWhitePiece)) {
-                response.setStatus(403); // 禁止操作
+                response.setStatus(403); // frobid
                 response.getWriter().write("对方のターンです");
                 return;
             }
@@ -191,22 +190,22 @@ public class GameServlet extends HttpServlet {
             if (!legal) {
                 response.setStatus(403);
                 response.getWriter().write("不正な移動です (移动不合法)");
-                return; // 拦截非法移动
+                return; // invalid
             }
 
-            // --- 2. 胜负判定 ---
+            // --- 2. Determining the winner ---
             String status = "OK";
             if (targetPiece.equalsIgnoreCase("k")) {
-                status = "GAMEOVER_" + turn; // 抓住了对方的王
+                status = "GAMEOVER_" + turn; // the king is dead
             }
 
-            // --- 3. 执行移动（通过 Board.movePiece，处理易位与升变） ---
+            // --- 3. Perform a move (via Board.move Piece, handling transposition and promotion). ---
             board.movePiece(rF, cF, rT, cT);
 
-            // 保存到数据库（记录移动）
+            // Save to database (record move)
             moveDAO.saveMove(turn, movingPiece, rF, cF, rT, cT);
 
-            // 也在会话中记录本局移动，便于只回放本局历史
+            // The game also records moves within the current session, making it easier to replay only the history of that session.
             @SuppressWarnings("unchecked")
             java.util.List<String[]> sessionMoves = (java.util.List<String[]>) session.getAttribute("gameMoves");
             if (sessionMoves == null) {
@@ -226,12 +225,12 @@ public class GameServlet extends HttpServlet {
             rec[4] = rT + "," + cT;
             sessionMoves.add(rec);
 
-            // --- 4. 切换回合 ---
+            // --- 4. exchange the round ---
             session.setAttribute("board", board);
             session.setAttribute("turn", "white".equals(turn) ? "black" : "white");
 
             response.setStatus(200);
-            response.getWriter().write(status); // 返回 OK 或 GAMEOVER
+            response.getWriter().write(status); // return OK or GAMEOVER
 
         
 

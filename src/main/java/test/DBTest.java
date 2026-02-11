@@ -9,7 +9,7 @@ public class DBTest {
         System.out.println("DBTest: starting MoveDAO.getHistory()...");
         MoveDAO dao = new MoveDAO();
         try {
-            // 插入一条测试记录，再读取全部历史验证写入
+            //Insert a test record, then read all historical verifications and writes.
             dao.saveMove("tester", "P", 6, 0, 5, 0);
             List<String> history = dao.getHistory();
             if (history == null || history.isEmpty()) {

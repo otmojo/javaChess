@@ -44,7 +44,6 @@
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version>
         </dependency>
-        
 
         <!-- Gson for JSON processing -->
         <dependency>
@@ -57,23 +56,28 @@
     <build>
         <finalName>chess-platform</finalName>
         <plugins>
+            <!-- Maven War Plugin: 打包成 WAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.3.2</version>
-                     <groupId>org.springframework.boot</groupId>
-                      <artifactId>spring-boot-maven-plugin</artifactId>
-                      <version>3.1.5</version>
-                      <executions>
-                          <execution>
-                              <goals>
-                                  <goal>repackage</goal>
-                              </goals>
-                              <configuration>
-                                  <mainClass></mainClass>
-                              </configuration>
-                          </execution>
-                      </executions>
+            </plugin>
+            
+            <!-- Spring Boot Plugin: 将 WAR 转换为可执行 JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.1.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass></mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

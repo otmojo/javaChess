@@ -126,7 +126,7 @@
             .then(res => res.text()) 
             .then(status => {
                 if (status.includes("GAMEOVER") || status === "OK") {
-                    // 同步到 RoomManager
+                    // moving to RoomManager
                     const chessParams = new URLSearchParams();
                     chessParams.append('roomId', ROOM_ID);
                     chessParams.append('move', moveStr);
@@ -151,7 +151,7 @@
         }
     }
 
-    // move in returns
+    // Polling for opponent's move and game status
     setInterval(function() {
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())
@@ -159,6 +159,29 @@
                 if (move !== "" && move !== lastMoveFromServer) {
                     sessionStorage.setItem("lastMove", move);
                     location.reload();
+                }
+            });
+        
+        
+        fetch('gameStatus?roomId=' + ROOM_ID)
+            .then(res => res.text())
+            .then(data => {
+                const [status, winner] = data.split('|');
+                if (status !== 'ACTIVE') {
+                    // show alert only once
+                    if (!sessionStorage.getItem('gameEnded_' + ROOM_ID)) {
+                        let message = '';
+                        if (status === 'WHITE_WON') {
+                            message = winner === 'white' ? 'あなたの勝ちです！' : '白の勝ち';
+                        } else if (status === 'BLACK_WON') {
+                            message = winner === 'black' ? 'あなたの勝ちです！' : '黒の勝ち';
+                        } else if (status === 'DRAW') {
+                            message = '引き分け';
+                        }
+                        alert('対局終了！' + message);
+                        sessionStorage.setItem('gameEnded_' + ROOM_ID, 'true');
+                    }
+                    window.gameEnded = true;
                 }
             });
     }, 1500);

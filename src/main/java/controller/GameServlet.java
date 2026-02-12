@@ -32,6 +32,10 @@ public class GameServlet extends HttpServlet {
                 RoomManager.setBoard(roomId, newBoard);
                 RoomManager.setTurn(roomId, "white");
                 
+                // ===== 新增：重置游戏状态 =====
+                RoomManager.resetGameStatus(roomId);
+                // ===========================
+                
                 session.setAttribute("board", newBoard); 
                 session.setAttribute("turn", "white");      
                 // save one round
@@ -58,6 +62,9 @@ public class GameServlet extends HttpServlet {
             board = new Board();
             RoomManager.setBoard(roomId, board);
             RoomManager.setTurn(roomId, "white");
+            // ===== 新增：初始化游戏状态 =====
+            RoomManager.resetGameStatus(roomId);
+            // ===========================
             turn = "white";
         }
         
@@ -165,6 +172,16 @@ public class GameServlet extends HttpServlet {
 
         try {
             HttpSession session = request.getSession();
+            String roomId = "game1";
+            
+            // ===== check: game is end or not  =====
+            if (RoomManager.isGameOver(roomId)) {
+                response.setStatus(403);
+                response.getWriter().write("GAME_ALREADY_ENDED");
+                return;
+            }
+            // ================================
+            
             Board board = (Board) session.getAttribute("board");
             if (board == null) {
                 response.setStatus(400);
@@ -205,12 +222,6 @@ public class GameServlet extends HttpServlet {
                 return; // invalid
             }
 
-            // --- 2. Determining the winner ---
-            String status = "OK";
-            if (targetPiece.equalsIgnoreCase("k")) {
-                status = "GAMEOVER_" + turn; // the king is dead
-            }
-
             // --- 3. Perform a move (via Board.move Piece, handling transposition and promotion). ---
             board.movePiece(rF, cF, rT, cT);
 
@@ -237,20 +248,46 @@ public class GameServlet extends HttpServlet {
             rec[4] = rT + "," + cT;
             sessionMoves.add(rec);
 
-            // --- 4. exchange the round ---
-            String nextTurn = "white".equals(turn) ? "black" : "white";
+            // --- 4. results and status =====
+            String status = "OK";
+            
+            // check the king
+            if (targetPiece != null && !targetPiece.equals("")) {
+                if (targetPiece.equalsIgnoreCase("k")) {
+                    status = "GAMEOVER_" + turn;
+                    // set status
+                    if ("white".equals(turn)) {
+                        RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_WHITE_WON);
+                    } else {
+                        RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_BLACK_WON);
+                    }
+                    System.out.println("Game Over! Winner: " + turn);
+                }
+            }
+            
+            // ===== unfinished: flaw =====
+            // boolean isStalemate = engine.isStalemate(board, nextTurn);
+            // if (isStalemate) {
+            //     status = "DRAW_STALEMATE";
+            //     RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_DRAW);
+            // }
+            // ========================================
+
+            // --- 5. exchange the round (only when the game ends) ---
+            if (!RoomManager.isGameOver(roomId)) {
+                String nextTurn = "white".equals(turn) ? "black" : "white";
+                session.setAttribute("turn", nextTurn);
+                RoomManager.setTurn(roomId, nextTurn);
+            }
+
             session.setAttribute("board", board);
-            session.setAttribute("turn", nextTurn);
 
             // 同步到 RoomManager
-            String roomId = "game1";
             RoomManager.setBoard(roomId, board);
-            RoomManager.setTurn(roomId, nextTurn);
+            RoomManager.setMove(roomId, rF + "," + cF + "-" + rT + "," + cT);
 
             response.setStatus(200);
             response.getWriter().write(status); // return OK or GAMEOVER
-
-        
 
         } catch (Exception e) {
             e.printStackTrace();

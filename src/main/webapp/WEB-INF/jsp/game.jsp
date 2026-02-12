@@ -30,7 +30,7 @@
         Board b = (Board) session.getAttribute("board");
         String turn = (String) session.getAttribute("turn");
 
-        String roomId = "game1"; // 实际可从参数获取
+        String roomId = "game1";
         Integer mySide = (Integer) session.getAttribute("mySide");
         if (mySide == null) {
             mySide = com.chess.RoomManager.joinRoom(roomId);
@@ -38,7 +38,7 @@
         }
 
         if (mySide == 0) {
-            out.println("<div style='color:red; margin-top:50px;'><h3>对不起，房间已满！</h3></div>");
+            out.println("<div style='color:red; margin-top:50px;'><h3>申し訳ございませんが、全室満室です。</h3></div>");
             return;
         }
 
@@ -80,7 +80,7 @@
     <% } %>
 
     <script>
-    const MY_SIDE = <%= mySide %>; // 1代表白，2代表黑
+    const MY_SIDE = <%= mySide %>; // 1=white，2=black
     const ROOM_ID = "<%= roomId %>";
     let lastMoveFromServer = sessionStorage.getItem("lastMove") || "";
     let firstPos = null;
@@ -95,7 +95,7 @@
             // Step 1: Select the starting point
             if (!piece || piece === "") return;
 
-            // 权限检查：1(白) 只能动大写字母；2(黑) 只能动小写字母
+            // move your pieces only
             const isWhitePiece = piece[0] === piece[0].toUpperCase();
             if (MY_SIDE === 1 && !isWhitePiece) return;
             if (MY_SIDE === 2 && isWhitePiece) return;
@@ -151,7 +151,7 @@
         }
     }
 
-    // 开启轮询检查对方棋步
+    // move in returns
     setInterval(function() {
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())

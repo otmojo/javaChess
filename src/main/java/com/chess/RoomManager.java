@@ -14,6 +14,17 @@ public class RoomManager {
     // 存储房间当前回合
     private static final ConcurrentHashMap<String, String> turns = new ConcurrentHashMap<>();
 
+    
+    // 游戏状态常量
+    public static final String GAME_STATUS_ACTIVE = "ACTIVE";
+    public static final String GAME_STATUS_WHITE_WON = "WHITE_WON";
+    public static final String GAME_STATUS_BLACK_WON = "BLACK_WON";
+    public static final String GAME_STATUS_DRAW = "DRAW";
+    
+    // 存储房间游戏状态
+    private static final ConcurrentHashMap<String, String> gameStatus = new ConcurrentHashMap<>();
+    // ========================================
+
     public static Board getBoard(String roomId) {
         return boards.get(roomId);
     }
@@ -35,7 +46,15 @@ public class RoomManager {
         playerCounts.putIfAbsent(roomId, new AtomicInteger(0));
         AtomicInteger count = playerCounts.get(roomId);
         if (count.get() < 2) {
-            return count.incrementAndGet(); // 返回 1 或 2
+            int side = count.incrementAndGet();
+            
+            // ===== 新增：第一个玩家加入时初始化游戏状态 =====
+            if (side == 1) {
+                gameStatus.putIfAbsent(roomId, GAME_STATUS_ACTIVE);
+            }
+            // ==========================================
+            
+            return side; // 返回 1 或 2
         }
         return 0; // 房间已满
     }
@@ -47,4 +66,68 @@ public class RoomManager {
     public static String getMove(String roomId) {
         return latestMoves.getOrDefault(roomId, "");
     }
+    
+    /**
+     * 获取房间当前游戏状态
+     * @param roomId 房间ID
+     * @return 游戏状态常量
+     */
+    public static String getGameStatus(String roomId) {
+        return gameStatus.getOrDefault(roomId, GAME_STATUS_ACTIVE);
+    }
+    
+    /**
+     * 设置房间游戏状态
+     * @param roomId 房间ID
+     * @param status 游戏状态常量
+     */
+    public static void setGameStatus(String roomId, String status) {
+        gameStatus.put(roomId, status);
+    }
+    
+    /**
+     * 检查游戏是否已结束
+     * @param roomId 房间ID
+     * @return true: 游戏已结束, false: 游戏进行中
+     */
+    public static boolean isGameOver(String roomId) {
+        String status = getGameStatus(roomId);
+        return !GAME_STATUS_ACTIVE.equals(status);
+    }
+    
+    /**
+     * 获取获胜方
+     * @param roomId 房间ID
+     * @return "white", "black", 或 null（无获胜方/游戏未结束）
+     */
+    public static String getWinner(String roomId) {
+        String status = getGameStatus(roomId);
+        if (GAME_STATUS_WHITE_WON.equals(status)) {
+            return "white";
+        } else if (GAME_STATUS_BLACK_WON.equals(status)) {
+            return "black";
+        }
+        return null;
+    }
+    
+    /**
+     * 重置房间游戏状态（用于新对局）
+     * @param roomId 房间ID
+     */
+    public static void resetGameStatus(String roomId) {
+        gameStatus.put(roomId, GAME_STATUS_ACTIVE);
+    }
+    
+    /**
+     * 清理房间所有数据（玩家离开时调用）
+     * @param roomId 房间ID
+     */
+    public static void cleanupRoom(String roomId) {
+        latestMoves.remove(roomId);
+        playerCounts.remove(roomId);
+        boards.remove(roomId);
+        turns.remove(roomId);
+        gameStatus.remove(roomId);
+    }
+    // ==============================================
 }

@@ -31,8 +31,6 @@ public class GameServlet extends HttpServlet {
                 Board newBoard = new Board();
                 RoomManager.setBoard(roomId, newBoard);
                 RoomManager.setTurn(roomId, "white");
-                
-                // ===== 新增：重置游戏状态 =====
                 RoomManager.resetGameStatus(roomId);
                 // ===========================
                 
@@ -62,7 +60,6 @@ public class GameServlet extends HttpServlet {
             board = new Board();
             RoomManager.setBoard(roomId, board);
             RoomManager.setTurn(roomId, "white");
-            // ===== 新增：初始化游戏状态 =====
             RoomManager.resetGameStatus(roomId);
             // ===========================
             turn = "white";

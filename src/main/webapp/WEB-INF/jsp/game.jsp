@@ -58,7 +58,6 @@
                 for (int c = 0; c < 8; c++) {
                     String piece = grid[r][c];
                     String color = (r + c) % 2 == 0 ? "light" : "dark";
-                    // Ensure that the ID generation format is sq-r-c
         %>
             <div class="square <%=color%>" 
                  id="sq-<%=r%>-<%=c%>" 
@@ -73,9 +72,9 @@
     </div>
     <div class="info">手番: <%= "white".equals(turn) ? "白" : "黒" %></div>
     <div class="menu" style="margin-top: 20px;">
-    <button onclick="location.href='game?action=reset'">🔄 NEW GAME</button>
-    <button onclick="location.href='game?action=history'">📜 HISTORY</button>
-</div>
+        <button onclick="location.href='game?action=reset'">🔄 NEW GAME</button>
+        <button onclick="location.href='game?action=history'">📜 HISTORY</button>
+    </div>
 
     <% } %>
 
@@ -126,17 +125,15 @@
             .then(res => res.text()) 
             .then(status => {
                 if (status.includes("GAMEOVER") || status === "OK") {
-                    // moving to RoomManager
+                    // 同步到 RoomManager
                     const chessParams = new URLSearchParams();
                     chessParams.append('roomId', ROOM_ID);
                     chessParams.append('move', moveStr);
                     fetch('chessAction', { method: 'POST', body: chessParams })
                     .then(() => {
                         sessionStorage.setItem("lastMove", moveStr);
-                        if (status.includes("GAMEOVER")) {
-                            const winner = status.split("_")[1] === "white" ? "白" : "黒";
-                            alert("勝負あり！" + winner + "WON！");
-                        }
+                        
+
                         location.reload();
                     });
                 } else {
@@ -151,8 +148,9 @@
         }
     }
 
-    // Polling for opponent's move and game status
+    
     setInterval(function() {
+        
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())
             .then(move => {
@@ -168,23 +166,30 @@
             .then(data => {
                 const [status, winner] = data.split('|');
                 if (status !== 'ACTIVE') {
-                    // show alert only once
+                    
                     if (!sessionStorage.getItem('gameEnded_' + ROOM_ID)) {
                         let message = '';
+                        let isWinner = false;
+                        
                         if (status === 'WHITE_WON') {
-                            message = winner === 'white' ? 'あなたの勝ちです！' : '白の勝ち';
+                            isWinner = (winner === 'white' && MY_SIDE === 1) || 
+                                      (winner === 'black' && MY_SIDE === 2);
+                            message = isWinner ? 'あなたの勝ちです！' : '白の勝ち';
                         } else if (status === 'BLACK_WON') {
-                            message = winner === 'black' ? 'あなたの勝ちです！' : '黒の勝ち';
+                            isWinner = (winner === 'black' && MY_SIDE === 2) || 
+                                      (winner === 'white' && MY_SIDE === 1);
+                            message = isWinner ? 'あなたの勝ちです！' : '黒の勝ち';
                         } else if (status === 'DRAW') {
                             message = '引き分け';
                         }
-                        alert('対局終了！' + message);
+                        
+                        alert('対局終了！ ' + message);
                         sessionStorage.setItem('gameEnded_' + ROOM_ID, 'true');
                     }
                     window.gameEnded = true;
                 }
             });
     }, 1500);
-</script>
+    </script>
 </body>
 </html>

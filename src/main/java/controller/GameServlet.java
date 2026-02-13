@@ -71,12 +71,9 @@ public class GameServlet extends HttpServlet {
         // 2. according to action to load history
         String action = request.getParameter("action");
         if ("history".equals(action)) {
-            // use the data firstly(this round)
-            @SuppressWarnings("unchecked")
-            List<String[]> moves = (List<String[]>) session.getAttribute("gameMoves");
-            if (moves == null) {
-                moves = moveDAO.getMoves();
-            }
+            
+            List<String[]> moves = moveDAO.getMoves(); 
+            
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             for (int i = 0; i < moves.size(); i++) {
@@ -106,11 +103,8 @@ public class GameServlet extends HttpServlet {
 
         // return to all the movements in JSON （for frontend AJAX）
         if ("movesJson".equals(action)) {
-            @SuppressWarnings("unchecked")
-            List<String[]> moves = (List<String[]>) session.getAttribute("gameMoves");
-            if (moves == null) {
-                moves = moveDAO.getMoves();
-            }
+            
+            List<String[]> moves = moveDAO.getMoves();
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             for (int i = 0; i < moves.size(); i++) {

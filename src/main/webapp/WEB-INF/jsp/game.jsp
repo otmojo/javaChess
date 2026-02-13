@@ -21,6 +21,23 @@
         .dark { background: #b58863; color: #eee; }
         .selected { outline: 4px solid #ffd700; outline-offset: -4px; z-index: 10; }
         .info { margin-top: 20px; color: #aaa; }
+
+        
+        .white-piece {
+            text-shadow: 0 0 8px #fff, 0 0 12px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.6);
+        }
+        
+        .black-piece {
+            text-shadow: 0 0 8px #000, 0 0 12px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
+        }
+        
+        .square.dark .black-piece {
+            text-shadow: 0 0 10px #000, 0 0 16px #000, 0 0 24px rgba(0,0,0,0.9);
+        }
+        
+        .square.light .white-piece {
+            text-shadow: 0 0 6px #fff, 0 0 10px rgba(255,255,255,0.9);
+        }
     </style>
 </head>
 <body>

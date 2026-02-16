@@ -3,17 +3,17 @@ package controller;
 import java.io.IOException;
 import java.util.List;
 
+import com.chess.RoomManager;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import model.dao.MoveDAO;
 import model.entity.Board;
 import model.logic.RuleEngine;
-import com.chess.RoomManager;
 
 @WebServlet("/game")
 public class GameServlet extends HttpServlet {
@@ -119,7 +119,7 @@ public class GameServlet extends HttpServlet {
         // return to all the movements in JSON （for frontend AJAX）
         if ("movesJson".equals(action)) {
             
-            List<String[]> moves = moveDAO.getMoves();
+            List<String[]> moves = moveDAO.getMoves(roomId);
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             for (int i = 0; i < moves.size(); i++) {
@@ -240,7 +240,7 @@ public class GameServlet extends HttpServlet {
             board.movePiece(rF, cF, rT, cT);
 
             // Save to database (record move)
-            moveDAO.saveMove(turn, movingPiece, rF, cF, rT, cT);
+            moveDAO.saveMove(roomId, turn, movingPiece, rF, cF, rT, cT);
 
             // The game also records moves within the current session, making it easier to replay only the history of that session.
             @SuppressWarnings("unchecked")
@@ -279,15 +279,8 @@ public class GameServlet extends HttpServlet {
                 }
             }
             
-            // ===== unfinished: flaw =====
-            // boolean isStalemate = engine.isStalemate(board, nextTurn);
-            // if (isStalemate) {
-            //     status = "DRAW_STALEMATE";
-            //     RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_DRAW);
-            // }
-            // ========================================
-
-            // --- 5. exchange the round (only when the game ends) ---
+            
+            
             if (!RoomManager.isGameOver(roomId)) {
                 String nextTurn = "white".equals(turn) ? "black" : "white";
                 session.setAttribute("turn", nextTurn);
@@ -296,7 +289,7 @@ public class GameServlet extends HttpServlet {
 
             session.setAttribute("board", board);
 
-            // 同步到 RoomManager
+            
             RoomManager.setBoard(roomId, board);
             RoomManager.setMove(roomId, rF + "," + cF + "-" + rT + "," + cT);
 

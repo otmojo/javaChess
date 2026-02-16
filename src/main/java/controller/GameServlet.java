@@ -27,7 +27,14 @@ public class GameServlet extends HttpServlet {
         
             if ("reset".equals(request.getParameter("action"))) {
                 HttpSession session = request.getSession();
-                String roomId = "game1";
+                String roomId = request.getParameter("roomId");
+                if (roomId == null) {
+                    roomId = (String) session.getAttribute("roomId");
+                }
+                if (roomId == null) {
+                    response.sendRedirect("lobby?error=no_room");
+                    return;
+                }
                 Board newBoard = new Board();
                 RoomManager.setBoard(roomId, newBoard);
                 RoomManager.setTurn(roomId, "white");
@@ -38,7 +45,7 @@ public class GameServlet extends HttpServlet {
                 session.setAttribute("turn", "white");      
                 // save one round
                 try {
-                    moveDAO.clearMoves();
+                    moveDAO.clearMoves(roomId);
                 } catch (Exception e) {
                     System.err.println("error when the moves got cleared: " + e.getMessage());
                 }
@@ -52,7 +59,15 @@ public class GameServlet extends HttpServlet {
         System.out.println("go into doGet route /game");
         HttpSession session = request.getSession();
 
-        String roomId = "game1";
+        String roomId = request.getParameter("roomId");
+        if (roomId == null) {
+            roomId = (String) session.getAttribute("roomId");
+        }
+        if (roomId == null) {
+            response.sendRedirect("lobby?error=no_room");
+            return;
+        }
+
         Board board = RoomManager.getBoard(roomId);
         String turn = RoomManager.getTurn(roomId);
 
@@ -72,7 +87,7 @@ public class GameServlet extends HttpServlet {
         String action = request.getParameter("action");
         if ("history".equals(action)) {
             
-            List<String[]> moves = moveDAO.getMoves(); 
+            List<String[]> moves = moveDAO.getMoves(roomId); 
             
             StringBuilder sb = new StringBuilder();
             sb.append("[");
@@ -163,7 +178,15 @@ public class GameServlet extends HttpServlet {
 
         try {
             HttpSession session = request.getSession();
-            String roomId = "game1";
+            String roomId = request.getParameter("roomId");
+            if (roomId == null) {
+                roomId = (String) session.getAttribute("roomId");
+            }
+            if (roomId == null) {
+                response.setStatus(400);
+                response.getWriter().write("Error: Room ID not found.");
+                return;
+            }
             
             // ===== check: game is end or not  =====
             if (RoomManager.isGameOver(roomId)) {

@@ -3,8 +3,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# 改成不跳过测试，显示详细错误
-RUN mvn clean compile -e
+
+
+RUN mvn clean compile -e -X
 
 FROM tomcat:10-jdk17
 COPY --from=builder /app/target/*.war /usr/local/tomcat/webapps/ROOT.war

@@ -1,11 +1,12 @@
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mvn clean package -DskipTests
+
+# 改成不跳过测试，显示详细错误
+RUN mvn clean compile -e
 
 FROM tomcat:10-jdk17
-RUN rm -rf /usr/local/tomcat/webapps/*
-COPY --from=builder /app/target/chess-platform.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=builder /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

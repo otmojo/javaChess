@@ -12,42 +12,80 @@
         .board { 
             display: grid; grid-template-columns: repeat(8, 60px); 
             width: 480px; margin: 40px auto; border: 4px solid #333; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .square { 
             width: 60px; height: 60px; display: flex; 
-            align-items: center; justify-content: center; font-size: 40px; cursor: pointer;
+            align-items: center; justify-content: center; font-size: 42px; cursor: pointer;
+            transition: all 0.2s;
         }
-        .light { background: #f0d9b5; color: #333; }
-        .dark { background: #b58863; color: #eee; }
+        .light { background: #f0d9b5; }
+        .dark { background: #b58863; }
         .selected { outline: 4px solid #ffd700; outline-offset: -4px; z-index: 10; }
         .info { margin-top: 20px; color: #aaa; }
 
         
         .white-piece {
             text-shadow: 0 0 8px #fff, 0 0 12px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.6);
+            color: #ffffff;
         }
+        
         .black-piece {
             text-shadow: 0 0 8px #000, 0 0 12px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
+            color: #222222;
         }
+        
         .square.dark .black-piece {
             text-shadow: 0 0 10px #000, 0 0 16px #000, 0 0 24px rgba(0,0,0,0.9);
+            color: #eeeeee;
         }
+        
         .square.light .white-piece {
             text-shadow: 0 0 6px #fff, 0 0 10px rgba(255,255,255,0.9);
         }
 
         
         .back-btn {
-            background: #666;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: #444;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 8px 20px;
+            border-radius: 20px;
             cursor: pointer;
             margin-left: 10px;
+            transition: all 0.3s;
+            font-size: 14px;
         }
         .back-btn:hover {
-            background: #888;
+            background: #d4af37;
+            color: #1a1a1a;
+        }
+
+        .menu button {
+            background: transparent;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menu button:hover {
+            background: #d4af37;
+            color: #1a1a1a;
+        }
+
+        .room-info {
+            color: #888;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .room-id {
+            color: #d4af37;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -55,7 +93,7 @@
     <h2>Quiet Chess</h2>
     
     <%
-        // ========== roomId ==========
+        // ========== 获取roomId ==========
         String roomId = request.getParameter("roomId");
         if (roomId == null) {
             roomId = (String) session.getAttribute("roomId");
@@ -63,31 +101,26 @@
         
         
         if (roomId == null) {
-            response.sendRedirect("lobby.jsp");
+            response.sendRedirect("lobby");
             return;
         }
         
         
         com.chess.RoomManager.updateActivity(roomId);
         
-        // ===================================================
-        
         Board b = (Board) session.getAttribute("board");
         String turn = (String) session.getAttribute("turn");
 
         Integer mySide = (Integer) session.getAttribute("mySide");
         if (mySide == null) {
-
-
             mySide = com.chess.RoomManager.joinRoom(roomId);
             session.setAttribute("mySide", mySide);
             session.setAttribute("roomId", roomId);
-            // ========================================
         }
 
         if (mySide == 0) {
             
-            response.sendRedirect("lobby.jsp?error=full");
+            response.sendRedirect("lobby?error=full");
             return;
         }
 
@@ -95,12 +128,20 @@
     %>
         <div style="color:red; margin-top:50px;">
             <h3>エラー：セッションが切れました。</h3>
-            <p>ブラウザをリロードするか、/game にアクセスし直してください。</p>
+            <p>ブラウザをリロードするか、ゲームにアクセスし直してください。</p>
         </div>
     <%
         } else {
             String[][] grid = b.getGrid();
     %>
+    
+    
+    <div class="room-info">
+        <span>部屋番号: <span class="room-id"><%= roomId %></span></span>
+        <span style="margin: 0 15px;">|</span>
+        <span>あなた: <%= mySide == 1 ? "☀ 先手(白)" : "☾ 後手(黒)" %></span>
+    </div>
+
     <div class="board">
         <% 
             for (int r = 0; r < 8; r++) {
@@ -113,7 +154,6 @@
                     if (piece != null && !piece.isEmpty()) {
                         pieceColorClass = Character.isUpperCase(piece.charAt(0)) ? "white-piece" : "black-piece";
                     }
-                    // ========================================
         %>
             <div class="square <%=color%> <%=pieceColorClass%>" 
                  id="sq-<%=r%>-<%=c%>" 
@@ -128,15 +168,14 @@
     </div>
     
     
-    <div style="margin-top: 10px;">
-        <span style="color: #aaa;">部屋番号: <%= roomId %></span>
-        <button class="back-btn" onclick="location.href='lobby.jsp'">🏠 ロビーに戻る</button>
-    </div>
-    
-    <div class="info">手番: <%= "white".equals(turn) ? "白" : "黒" %></div>
-    <div class="menu" style="margin-top: 20px;">
-        <button onclick="location.href='game?action=reset&roomId=<%= roomId %>'">🔄 NEW GAME</button>
-        <button onclick="location.href='game?action=history&roomId=<%= roomId %>'">📜 HISTORY</button>
+    <div style="margin-top: 20px;">
+        <div class="info">手番: <%= "white".equals(turn) ? "☀ 白" : "☾ 黒" %></div>
+        
+        <div class="menu" style="margin-top: 15px;">
+            <button onclick="location.href='game?action=reset&roomId=<%= roomId %>'">🔄 NEW GAME</button>
+            <button onclick="location.href='game?action=history&roomId=<%= roomId %>'">📜 HISTORY</button>
+            <button class="back-btn" onclick="location.href='lobby'">🏠 ロビーに戻る</button>
+        </div>
     </div>
 
     <% } %>
@@ -154,6 +193,7 @@
         const piece = square.getAttribute("data-piece");
 
         if (!firstPos) {
+            
             if (!piece || piece === "") return;
 
             const isWhitePiece = piece[0] === piece[0].toUpperCase();
@@ -163,6 +203,7 @@
             firstPos = {r: r, c: c};
             square.classList.add('selected');
         } else {
+            
             if (firstPos.r === r && firstPos.c === c) {
                 square.classList.remove('selected');
                 firstPos = null;
@@ -176,9 +217,9 @@
             params.append('fC', firstPos.c);
             params.append('tR', r);
             params.append('tC', c);
-            params.append('roomId', ROOM_ID);  // 🆕 添加roomId
+            params.append('roomId', ROOM_ID);
 
-            fetch('./game', {
+            fetch('game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: params.toString()
@@ -206,6 +247,7 @@
         }
     }
 
+    
     setInterval(function() {
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())

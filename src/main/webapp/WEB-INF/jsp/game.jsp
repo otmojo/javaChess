@@ -8,17 +8,44 @@
     <meta charset="UTF-8">
     <title>Quiet Chess</title>
     <style>
-        body { background: #1a1a1a; color: #eee; font-family: sans-serif; text-align: center; }
+        body { 
+            background: #1a1a1a; 
+            color: #eee; 
+            font-family: sans-serif; 
+            text-align: center; 
+        }
+        
+        
+        .black-view .board {
+            transform: rotate(180deg);
+        }
+        
+        .black-view .square {
+            transform: rotate(180deg);
+        }
+        
         .board { 
-            display: grid; grid-template-columns: repeat(8, 60px); 
-            width: 480px; margin: 40px auto; border: 4px solid #333; 
+            display: grid; 
+            grid-template-columns: repeat(8, 60px); 
+            width: 480px; 
+            margin: 40px auto; 
+            border: 4px solid #333; 
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
         }
+        
         .square { 
-            width: 60px; height: 60px; display: flex; 
-            align-items: center; justify-content: center; font-size: 42px; cursor: pointer;
+            width: 60px; 
+            height: 60px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 42px; 
+            cursor: pointer;
             transition: all 0.2s;
+            user-select: none;
         }
+        
         .light { background: #f0d9b5; }
         .dark { background: #b58863; }
         .selected { outline: 4px solid #ffd700; outline-offset: -4px; z-index: 10; }
@@ -26,22 +53,22 @@
 
         
         .white-piece {
-            text-shadow: 0 0 8px #fff, 0 0 12px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.6);
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
             color: #ffffff;
         }
         
         .black-piece {
-            text-shadow: 0 0 8px #000, 0 0 12px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
             color: #222222;
         }
         
         .square.dark .black-piece {
-            text-shadow: 0 0 10px #000, 0 0 16px #000, 0 0 24px rgba(0,0,0,0.9);
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
             color: #eeeeee;
         }
         
         .square.light .white-piece {
-            text-shadow: 0 0 6px #fff, 0 0 10px rgba(255,255,255,0.9);
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
         }
 
         
@@ -87,9 +114,25 @@
             color: #d4af37;
             font-weight: bold;
         }
+
+        
+        .view-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #333;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #aaa;
+            margin-left: 8px;
+        }
+        
+        .black-view .view-indicator {
+            background: #3a3a3a;
+            color: #d4af37;
+        }
     </style>
 </head>
-<body>
+<body class="<%= session.getAttribute("mySide") != null && (Integer)session.getAttribute("mySide") == 2 ? "black-view" : "" %>">
     <h2>Quiet Chess</h2>
     
     <%
@@ -99,12 +142,10 @@
             roomId = (String) session.getAttribute("roomId");
         }
         
-        
         if (roomId == null) {
             response.sendRedirect("lobby");
             return;
         }
-        
         
         com.chess.RoomManager.updateActivity(roomId);
         
@@ -119,7 +160,6 @@
         }
 
         if (mySide == 0) {
-            
             response.sendRedirect("lobby?error=full");
             return;
         }
@@ -135,11 +175,13 @@
             String[][] grid = b.getGrid();
     %>
     
-    
     <div class="room-info">
         <span>部屋番号: <span class="room-id"><%= roomId %></span></span>
         <span style="margin: 0 15px;">|</span>
         <span>あなた: <%= mySide == 1 ? "☀ 先手(白)" : "☾ 後手(黒)" %></span>
+        <span class="view-indicator">
+            <%= mySide == 2 ? "🔃 黒側視点" : "⬆ 白側視点" %>
+        </span>
     </div>
 
     <div class="board">
@@ -148,7 +190,6 @@
                 for (int c = 0; c < 8; c++) {
                     String piece = grid[r][c];
                     String color = (r + c) % 2 == 0 ? "light" : "dark";
-                    
                     
                     String pieceColorClass = "";
                     if (piece != null && !piece.isEmpty()) {
@@ -166,7 +207,6 @@
             } 
         %>
     </div>
-    
     
     <div style="margin-top: 20px;">
         <div class="info">手番: <%= "white".equals(turn) ? "☀ 白" : "☾ 黒" %></div>
@@ -188,35 +228,43 @@
 
     function handleClick(r, c) {
         console.log("Clicked:", r, c);
-        const currentId = "sq-" + r + "-" + c;
+        
+        
+        let actualR = r;
+        let actualC = c;
+        if (MY_SIDE === 2) {
+            
+            actualR = 7 - r;
+            actualC = 7 - c;
+        }
+        
+        const currentId = "sq-" + actualR + "-" + actualC;
         const square = document.getElementById(currentId);
         const piece = square.getAttribute("data-piece");
 
         if (!firstPos) {
-            
             if (!piece || piece === "") return;
 
             const isWhitePiece = piece[0] === piece[0].toUpperCase();
             if (MY_SIDE === 1 && !isWhitePiece) return;
             if (MY_SIDE === 2 && isWhitePiece) return;
             
-            firstPos = {r: r, c: c};
+            firstPos = {r: actualR, c: actualC};
             square.classList.add('selected');
         } else {
-            
-            if (firstPos.r === r && firstPos.c === c) {
+            if (firstPos.r === actualR && firstPos.c === actualC) {
                 square.classList.remove('selected');
                 firstPos = null;
                 return;
             }
 
-            const moveStr = firstPos.r + "," + firstPos.c + "-" + r + "," + c;
+            const moveStr = firstPos.r + "," + firstPos.c + "-" + actualR + "," + actualC;
             
             const params = new URLSearchParams();
             params.append('fR', firstPos.r);
             params.append('fC', firstPos.c);
-            params.append('tR', r);
-            params.append('tC', c);
+            params.append('tR', actualR);
+            params.append('tC', actualC);
             params.append('roomId', ROOM_ID);
 
             fetch('game', {
@@ -247,7 +295,6 @@
         }
     }
 
-    
     setInterval(function() {
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())

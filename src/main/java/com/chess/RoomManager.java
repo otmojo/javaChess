@@ -2,93 +2,190 @@ package com.chess;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.HashMap;
 import model.entity.Board;
 
 public class RoomManager {
-    // 存储房间最新棋步。Key: roomId, Value: "e2-e4"
+    // Store latest moves. Key: roomId, Value: "e2-e4"
     private static final ConcurrentHashMap<String, String> latestMoves = new ConcurrentHashMap<>();
-    // 存储房间当前人数。Key: roomId, Value: 0, 1, 或 2
+    // Store player counts. Key: roomId, Value: 0, 1, or 2
     private static final ConcurrentHashMap<String, AtomicInteger> playerCounts = new ConcurrentHashMap<>();
-    // 存储房间共享的棋盘对象
+    // Store board objects
     private static final ConcurrentHashMap<String, Board> boards = new ConcurrentHashMap<>();
-    // 存储房间当前回合
+    // Store current turn
     private static final ConcurrentHashMap<String, String> turns = new ConcurrentHashMap<>();
 
-    
-    // 游戏状态常量
+    // Game status constants
     public static final String GAME_STATUS_ACTIVE = "ACTIVE";
     public static final String GAME_STATUS_WHITE_WON = "WHITE_WON";
     public static final String GAME_STATUS_BLACK_WON = "BLACK_WON";
     public static final String GAME_STATUS_DRAW = "DRAW";
     
-    // 存储房间游戏状态
+    // Store game status
     private static final ConcurrentHashMap<String, String> gameStatus = new ConcurrentHashMap<>();
-    // ========================================
+    
+    // ========== NEW: Room list management ==========
+    // Store last active time for cleanup
+    private static final ConcurrentHashMap<String, Long> lastActiveTime = new ConcurrentHashMap<>();
+    
+    /**
+     * Get all rooms information
+     */
+    public static Map<String, Object> getAllRoomsInfo() {
+        Map<String, Object> rooms = new HashMap<>();
+        
+        for (String roomId : playerCounts.keySet()) {
+            Map<String, Object> info = new HashMap<>();
+            AtomicInteger count = playerCounts.get(roomId);
+            info.put("playerCount", count.get());
+            info.put("status", gameStatus.getOrDefault(roomId, GAME_STATUS_ACTIVE));
+            info.put("lastActive", lastActiveTime.getOrDefault(roomId, 0L));
+            info.put("hasBoard", boards.containsKey(roomId));
+            
+            rooms.put(roomId, info);
+        }
+        
+        return rooms;
+    }
+    
+    /**
+     * Create new room
+     */
+    public static synchronized String createRoom() {
+        String roomId = "room_" + System.currentTimeMillis();
+        playerCounts.put(roomId, new AtomicInteger(0));
+        gameStatus.put(roomId, GAME_STATUS_ACTIVE);
+        turns.put(roomId, "white");
+        lastActiveTime.put(roomId, System.currentTimeMillis());
+        
+        System.out.println("🆕 Created new room: " + roomId);
+        return roomId;
+    }
+    
+    /**
+     * Get available room (waiting room)
+     */
+    public static synchronized String getAvailableRoom() {
+        // Find waiting room first (1 player)
+        for (String roomId : playerCounts.keySet()) {
+            AtomicInteger count = playerCounts.get(roomId);
+            if (count.get() == 1) {
+                return roomId;
+            }
+        }
+        
+        // No waiting room, create new one
+        return createRoom();
+    }
+    
+    /**
+     * Update room activity time
+     */
+    public static void updateActivity(String roomId) {
+        if (roomId != null) {
+            lastActiveTime.put(roomId, System.currentTimeMillis());
+        }
+    }
+    
+    /**
+     * Clean up inactive rooms
+     * @param maxInactiveMinutes Maximum inactive minutes
+     */
+    public static void cleanupInactiveRooms(int maxInactiveMinutes) {
+        long now = System.currentTimeMillis();
+        long maxInactiveMillis = maxInactiveMinutes * 60 * 1000;
+        
+        System.out.println("🧹 Cleaning inactive rooms...");
+        int cleaned = 0;
+        
+        for (String roomId : playerCounts.keySet()) {
+            Long lastActive = lastActiveTime.get(roomId);
+            
+            // If no activity record or exceeds max inactive time
+            if (lastActive == null || (now - lastActive) > maxInactiveMillis) {
+                AtomicInteger count = playerCounts.get(roomId);
+                
+                // Clean empty rooms or long inactive rooms
+                if (count == null || count.get() == 0) {
+                    cleanupRoom(roomId);
+                    cleaned++;
+                    System.out.println("  Cleaned room: " + roomId);
+                }
+            }
+        }
+        
+        System.out.println("🧹 Cleanup completed, " + cleaned + " rooms cleaned");
+    }
+    
+    // ===============================================
 
     public static Board getBoard(String roomId) {
+        updateActivity(roomId);
         return boards.get(roomId);
     }
 
     public static void setBoard(String roomId, Board board) {
         boards.put(roomId, board);
+        updateActivity(roomId);
     }
 
     public static String getTurn(String roomId) {
+        updateActivity(roomId);
         return turns.getOrDefault(roomId, "white");
     }
 
     public static void setTurn(String roomId, String turn) {
         turns.put(roomId, turn);
+        updateActivity(roomId);
     }
 
-    // 尝试加入房间，返回分配的颜色：1(白), 2(黑), 0(房间满)
+    // Try to join room, returns: 1(white), 2(black), 0(room full)
     public static synchronized int joinRoom(String roomId) {
         playerCounts.putIfAbsent(roomId, new AtomicInteger(0));
         AtomicInteger count = playerCounts.get(roomId);
         if (count.get() < 2) {
             int side = count.incrementAndGet();
             
-            // ===== 新增：第一个玩家加入时初始化游戏状态 =====
+            // Initialize game status when first player joins
             if (side == 1) {
                 gameStatus.putIfAbsent(roomId, GAME_STATUS_ACTIVE);
             }
-            // ==========================================
             
-            return side; // 返回 1 或 2
+            updateActivity(roomId);
+            System.out.println("👤 Player joined room " + roomId + ", now " + count.get() + " players");
+            return side;
         }
-        return 0; // 房间已满
+        return 0; // Room full
     }
 
     public static void setMove(String roomId, String move) {
         latestMoves.put(roomId, move);
+        updateActivity(roomId);
     }
 
     public static String getMove(String roomId) {
+        updateActivity(roomId);
         return latestMoves.getOrDefault(roomId, "");
     }
     
     /**
-     * 获取房间当前游戏状态
-     * @param roomId 房间ID
-     * @return 游戏状态常量
+     * Get current game status
      */
     public static String getGameStatus(String roomId) {
         return gameStatus.getOrDefault(roomId, GAME_STATUS_ACTIVE);
     }
     
     /**
-     * 设置房间游戏状态
-     * @param roomId 房间ID
-     * @param status 游戏状态常量
+     * Set game status
      */
     public static void setGameStatus(String roomId, String status) {
         gameStatus.put(roomId, status);
+        updateActivity(roomId);
     }
     
     /**
-     * 检查游戏是否已结束
-     * @param roomId 房间ID
-     * @return true: 游戏已结束, false: 游戏进行中
+     * Check if game is over
      */
     public static boolean isGameOver(String roomId) {
         String status = getGameStatus(roomId);
@@ -96,9 +193,7 @@ public class RoomManager {
     }
     
     /**
-     * 获取获胜方
-     * @param roomId 房间ID
-     * @return "white", "black", 或 null（无获胜方/游戏未结束）
+     * Get winner
      */
     public static String getWinner(String roomId) {
         String status = getGameStatus(roomId);
@@ -111,16 +206,15 @@ public class RoomManager {
     }
     
     /**
-     * 重置房间游戏状态（用于新对局）
-     * @param roomId 房间ID
+     * Reset game status for new game
      */
     public static void resetGameStatus(String roomId) {
         gameStatus.put(roomId, GAME_STATUS_ACTIVE);
+        updateActivity(roomId);
     }
     
     /**
-     * 清理房间所有数据（玩家离开时调用）
-     * @param roomId 房间ID
+     * Clean up room data (called when players leave)
      */
     public static void cleanupRoom(String roomId) {
         latestMoves.remove(roomId);
@@ -128,6 +222,6 @@ public class RoomManager {
         boards.remove(roomId);
         turns.remove(roomId);
         gameStatus.remove(roomId);
+        lastActiveTime.remove(roomId);
     }
-    // ==============================================
 }

@@ -26,17 +26,28 @@
         .white-piece {
             text-shadow: 0 0 8px #fff, 0 0 12px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.6);
         }
-        
         .black-piece {
             text-shadow: 0 0 8px #000, 0 0 12px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
         }
-        
         .square.dark .black-piece {
             text-shadow: 0 0 10px #000, 0 0 16px #000, 0 0 24px rgba(0,0,0,0.9);
         }
-        
         .square.light .white-piece {
             text-shadow: 0 0 6px #fff, 0 0 10px rgba(255,255,255,0.9);
+        }
+
+        
+        .back-btn {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .back-btn:hover {
+            background: #888;
         }
     </style>
 </head>
@@ -44,18 +55,39 @@
     <h2>Quiet Chess</h2>
     
     <%
+        // ========== roomId ==========
+        String roomId = request.getParameter("roomId");
+        if (roomId == null) {
+            roomId = (String) session.getAttribute("roomId");
+        }
+        
+        
+        if (roomId == null) {
+            response.sendRedirect("lobby.jsp");
+            return;
+        }
+        
+        
+        com.chess.RoomManager.updateActivity(roomId);
+        
+        // ===================================================
+        
         Board b = (Board) session.getAttribute("board");
         String turn = (String) session.getAttribute("turn");
 
-        String roomId = "game1";
         Integer mySide = (Integer) session.getAttribute("mySide");
         if (mySide == null) {
+
+
             mySide = com.chess.RoomManager.joinRoom(roomId);
             session.setAttribute("mySide", mySide);
+            session.setAttribute("roomId", roomId);
+            // ========================================
         }
 
         if (mySide == 0) {
-            out.println("<div style='color:red; margin-top:50px;'><h3>申し訳ございませんが、全室満室です。</h3></div>");
+            
+            response.sendRedirect("lobby.jsp?error=full");
             return;
         }
 
@@ -75,8 +107,15 @@
                 for (int c = 0; c < 8; c++) {
                     String piece = grid[r][c];
                     String color = (r + c) % 2 == 0 ? "light" : "dark";
+                    
+                    
+                    String pieceColorClass = "";
+                    if (piece != null && !piece.isEmpty()) {
+                        pieceColorClass = Character.isUpperCase(piece.charAt(0)) ? "white-piece" : "black-piece";
+                    }
+                    // ========================================
         %>
-            <div class="square <%=color%>" 
+            <div class="square <%=color%> <%=pieceColorClass%>" 
                  id="sq-<%=r%>-<%=c%>" 
                  data-piece="<%= piece %>"
                  onclick="handleClick(<%=r%>,<%=c%>)">
@@ -87,18 +126,25 @@
             } 
         %>
     </div>
+    
+    
+    <div style="margin-top: 10px;">
+        <span style="color: #aaa;">部屋番号: <%= roomId %></span>
+        <button class="back-btn" onclick="location.href='lobby.jsp'">🏠 ロビーに戻る</button>
+    </div>
+    
     <div class="info">手番: <%= "white".equals(turn) ? "白" : "黒" %></div>
     <div class="menu" style="margin-top: 20px;">
-        <button onclick="location.href='game?action=reset'">🔄 NEW GAME</button>
-        <button onclick="location.href='game?action=history'">📜 HISTORY</button>
+        <button onclick="location.href='game?action=reset&roomId=<%= roomId %>'">🔄 NEW GAME</button>
+        <button onclick="location.href='game?action=history&roomId=<%= roomId %>'">📜 HISTORY</button>
     </div>
 
     <% } %>
 
     <script>
-    const MY_SIDE = <%= mySide %>; // 1=white，2=black
+    const MY_SIDE = <%= mySide %>;
     const ROOM_ID = "<%= roomId %>";
-    let lastMoveFromServer = sessionStorage.getItem("lastMove") || "";
+    let lastMoveFromServer = sessionStorage.getItem("lastMove_" + ROOM_ID) || "";
     let firstPos = null;
 
     function handleClick(r, c) {
@@ -108,10 +154,8 @@
         const piece = square.getAttribute("data-piece");
 
         if (!firstPos) {
-            // Step 1: Select the starting point
             if (!piece || piece === "") return;
 
-            // move your pieces only
             const isWhitePiece = piece[0] === piece[0].toUpperCase();
             if (MY_SIDE === 1 && !isWhitePiece) return;
             if (MY_SIDE === 2 && isWhitePiece) return;
@@ -119,7 +163,6 @@
             firstPos = {r: r, c: c};
             square.classList.add('selected');
         } else {
-            // Step 2: Move to the end point
             if (firstPos.r === r && firstPos.c === c) {
                 square.classList.remove('selected');
                 firstPos = null;
@@ -133,6 +176,7 @@
             params.append('fC', firstPos.c);
             params.append('tR', r);
             params.append('tC', c);
+            params.append('roomId', ROOM_ID);  // 🆕 添加roomId
 
             fetch('./game', {
                 method: 'POST',
@@ -142,15 +186,12 @@
             .then(res => res.text()) 
             .then(status => {
                 if (status.includes("GAMEOVER") || status === "OK") {
-                    // 同步到 RoomManager
                     const chessParams = new URLSearchParams();
                     chessParams.append('roomId', ROOM_ID);
                     chessParams.append('move', moveStr);
                     fetch('chessAction', { method: 'POST', body: chessParams })
                     .then(() => {
-                        sessionStorage.setItem("lastMove", moveStr);
-                        
-
+                        sessionStorage.setItem("lastMove_" + ROOM_ID, moveStr);
                         location.reload();
                     });
                 } else {
@@ -165,25 +206,21 @@
         }
     }
 
-    
     setInterval(function() {
-        
         fetch('chessAction?roomId=' + ROOM_ID)
             .then(res => res.text())
             .then(move => {
                 if (move !== "" && move !== lastMoveFromServer) {
-                    sessionStorage.setItem("lastMove", move);
+                    sessionStorage.setItem("lastMove_" + ROOM_ID, move);
                     location.reload();
                 }
             });
-        
         
         fetch('gameStatus?roomId=' + ROOM_ID)
             .then(res => res.text())
             .then(data => {
                 const [status, winner] = data.split('|');
                 if (status !== 'ACTIVE') {
-                    
                     if (!sessionStorage.getItem('gameEnded_' + ROOM_ID)) {
                         let message = '';
                         let isWinner = false;

@@ -20,8 +20,9 @@
             transform: rotate(180deg);
         }
         
+        
         .black-view .square {
-            transform: rotate(180deg);
+            /*  transform: rotate(180deg); */
         }
         
         .board { 
@@ -136,7 +137,7 @@
     <h2>Quiet Chess</h2>
     
     <%
-        // ========== 获取roomId ==========
+        // ========== get roomId ==========
         String roomId = request.getParameter("roomId");
         if (roomId == null) {
             roomId = (String) session.getAttribute("roomId");
@@ -178,9 +179,9 @@
     <div class="room-info">
         <span>部屋番号: <span class="room-id"><%= roomId %></span></span>
         <span style="margin: 0 15px;">|</span>
-        <span>あなた: <%= mySide == 1 ? "☀ 先手(白)" : "☾ 後手(黒)" %></span>
+        <span>あなた: <%= mySide == 1 ? "先手(白)" : "後手(黒)" %></span>
         <span class="view-indicator">
-            <%= mySide == 2 ? "🔃 黒側視点" : "⬆ 白側視点" %>
+            <%= mySide == 2 ? "黒側視点" : "白側" %>
         </span>
     </div>
 
@@ -195,11 +196,21 @@
                     if (piece != null && !piece.isEmpty()) {
                         pieceColorClass = Character.isUpperCase(piece.charAt(0)) ? "white-piece" : "black-piece";
                     }
+                    
+                    
+                    int displayR = r;
+                    int displayC = c;
+                    if (mySide != null && mySide == 2) {
+                        displayR = 7 - r;
+                        displayC = 7 - c;
+                    }
         %>
             <div class="square <%=color%> <%=pieceColorClass%>" 
-                 id="sq-<%=r%>-<%=c%>" 
+                 id="sq-<%=displayR%>-<%=displayC%>" 
                  data-piece="<%= piece %>"
-                 onclick="handleClick(<%=r%>,<%=c%>)">
+                 data-original-r="<%= r %>"
+                 data-original-c="<%= c %>"
+                 onclick="handleClick(<%=displayR%>, <%=displayC%>)">
                 <%= PieceUI.getUnicode(piece) %>
             </div>
         <% 
@@ -209,12 +220,12 @@
     </div>
     
     <div style="margin-top: 20px;">
-        <div class="info">手番: <%= "white".equals(turn) ? "☀ 白" : "☾ 黒" %></div>
+        <div class="info">手番: <%= "white".equals(turn) ? "白" : "黒" %></div>
         
         <div class="menu" style="margin-top: 15px;">
-            <button onclick="location.href='game?action=reset&roomId=<%= roomId %>'">🔄 NEW GAME</button>
-            <button onclick="location.href='game?action=history&roomId=<%= roomId %>'">📜 HISTORY</button>
-            <button class="back-btn" onclick="location.href='lobby'">🏠 ロビーに戻る</button>
+            <button onclick="location.href='game?action=reset&roomId=<%= roomId %>'">NEW GAME</button>
+            <button onclick="location.href='game?action=history&roomId=<%= roomId %>'">HISTORY</button>
+            <button class="back-btn" onclick="location.href='lobby'">ロビーに戻る</button>
         </div>
     </div>
 
@@ -226,20 +237,15 @@
     let lastMoveFromServer = sessionStorage.getItem("lastMove_" + ROOM_ID) || "";
     let firstPos = null;
 
-    function handleClick(r, c) {
-        console.log("Clicked:", r, c);
+    function handleClick(displayR, displayC) {
+        console.log("Clicked display position:", displayR, displayC);
         
         
-        let actualR = r;
-        let actualC = c;
-        if (MY_SIDE === 2) {
-            
-            actualR = 7 - r;
-            actualC = 7 - c;
-        }
+        const square = document.getElementById("sq-" + displayR + "-" + displayC);
+        const originalR = parseInt(square.getAttribute("data-original-r"));
+        const originalC = parseInt(square.getAttribute("data-original-c"));
         
-        const currentId = "sq-" + actualR + "-" + actualC;
-        const square = document.getElementById(currentId);
+        
         const piece = square.getAttribute("data-piece");
 
         if (!firstPos) {
@@ -249,22 +255,24 @@
             if (MY_SIDE === 1 && !isWhitePiece) return;
             if (MY_SIDE === 2 && isWhitePiece) return;
             
-            firstPos = {r: actualR, c: actualC};
+            
+            firstPos = {r: originalR, c: originalC, displayR: displayR, displayC: displayC};
             square.classList.add('selected');
         } else {
-            if (firstPos.r === actualR && firstPos.c === actualC) {
+            if (firstPos.r === originalR && firstPos.c === originalC) {
                 square.classList.remove('selected');
                 firstPos = null;
                 return;
             }
 
-            const moveStr = firstPos.r + "," + firstPos.c + "-" + actualR + "," + actualC;
+            
+            const moveStr = firstPos.r + "," + firstPos.c + "-" + originalR + "," + originalC;
             
             const params = new URLSearchParams();
             params.append('fR', firstPos.r);
             params.append('fC', firstPos.c);
-            params.append('tR', actualR);
-            params.append('tC', actualC);
+            params.append('tR', originalR);
+            params.append('tC', originalC);
             params.append('roomId', ROOM_ID);
 
             fetch('game', {

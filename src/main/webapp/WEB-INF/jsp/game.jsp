@@ -9,32 +9,37 @@
     <title>Quiet Chess</title>
     <style>
         body { 
-            background: #1a1a1a; 
-            color: #eee; 
-            font-family: sans-serif; 
-            text-align: center; 
+            background: #121212; 
+            color: #dcdcdc; 
+            font-family: 'Sawarabi Mincho', serif; 
+            text-align: center;
+            margin: 0;
         }
         
+        h2 {
+            margin-top: 20px;
+            color: #d4af37;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
         
         .black-view .board {
             transform: rotate(180deg);
         }
         
-        
         .black-view .square {
             transform: rotate(180deg);
         }
-        
+
         .board { 
             display: grid; 
             grid-template-columns: repeat(8, 60px); 
             width: 480px; 
-            margin: 40px auto; 
-            border: 4px solid #333; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            margin: 30px auto; 
+            border: 2px solid #333;
             transition: transform 0.3s ease;
         }
-        
+
         .square { 
             width: 60px; 
             height: 60px; 
@@ -46,13 +51,12 @@
             transition: all 0.2s;
             user-select: none;
         }
-        
+
         .light { background: #f0d9b5; }
         .dark { background: #b58863; }
         .selected { outline: 4px solid #ffd700; outline-offset: -4px; z-index: 10; }
-        .info { margin-top: 20px; color: #aaa; }
+        .info { margin-top: 15px; color: #888; font-size: 0.9em; }
 
-        
         .white-piece {
             text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
             color: #ffffff;
@@ -62,31 +66,36 @@
             text-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
             color: #222222;
         }
-        
+
         .square.dark .black-piece {
             text-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
             color: #eeeeee;
         }
-        
+
         .square.light .white-piece {
             text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
         }
 
-        
-        .back-btn {
-            background: #444;
+        .btn {
+            background: transparent;
             color: #d4af37;
             border: 1px solid #d4af37;
-            padding: 8px 20px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
             cursor: pointer;
-            margin-left: 10px;
             transition: all 0.3s;
-            font-size: 14px;
+            font-family: inherit;
+            font-size: 0.9em;
         }
-        .back-btn:hover {
+
+        .btn:hover {
             background: #d4af37;
-            color: #1a1a1a;
+            color: #121212;
+        }
+
+        .menu {
+            margin-top: 15px;
         }
 
         .menu button {
@@ -98,16 +107,18 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s;
+            font-family: inherit;
+            font-size: 0.9em;
         }
 
         .menu button:hover {
             background: #d4af37;
-            color: #1a1a1a;
+            color: #121212;
         }
 
         .room-info {
             color: #888;
-            font-size: 14px;
+            font-size: 0.85em;
             margin-top: 10px;
         }
 
@@ -116,13 +127,12 @@
             font-weight: bold;
         }
 
-        
         .view-indicator {
             display: inline-block;
             padding: 2px 8px;
             background: #333;
-            border-radius: 12px;
-            font-size: 11px;
+            border-radius: 4px;
+            font-size: 0.75em;
             color: #aaa;
             margin-left: 8px;
         }

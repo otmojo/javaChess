@@ -7,118 +7,251 @@
     <meta charset="UTF-8">
     <title>Quiet Chess - ロビー</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
             color: #eee;
-            font-family: sans-serif;
-            text-align: center;
-            padding: 40px;
+            font-family: 'Sawarabi Mincho', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
+
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        h1 {
-            color: #ffd700;
-            margin-bottom: 30px;
-        }
-        table {
+            max-width: 900px;
             width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 1px solid #444;
         }
-        th {
+
+        h1 {
+            font-size: 2.5em;
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 0.95em;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .room-card {
+            background: #2a2a2a;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+            border: 1px solid #3a3a3a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .room-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+            border-color: #d4af37;
+        }
+
+        .room-card.waiting {
+            border-left: 4px solid #4caf50;
+        }
+
+        .room-card.playing {
+            border-left: 4px solid #f44336;
+        }
+
+        .room-card.empty {
+            border-left: 4px solid #9e9e9e;
+            opacity: 0.7;
+        }
+
+        .room-id {
+            font-size: 1.2em;
+            color: #d4af37;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .room-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .player-count {
             background: #333;
-            color: #ffd700;
-            padding: 12px;
-            font-weight: normal;
-        }
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #444;
-        }
-        tr:hover {
-            background: #333;
-        }
-        .room-status {
-            display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 14px;
+            color: #fff;
         }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
         .status-waiting {
-            background: #2ecc71;
-            color: #fff;
+            background: #4caf50;
+            color: white;
         }
+
         .status-playing {
-            background: #e74c3c;
-            color: #fff;
+            background: #f44336;
+            color: white;
         }
+
         .status-empty {
-            background: #7f8c8d;
-            color: #fff;
+            background: #9e9e9e;
+            color: white;
         }
+
         .btn {
-            background: #ffd700;
+            background: transparent;
+            border: 1px solid #d4af37;
+            color: #d4af37;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: #d4af37;
+            color: #1a1a1a;
+        }
+
+        .btn:disabled {
+            border-color: #666;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .btn-create {
+            background: #d4af37;
             color: #1a1a1a;
             border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            text-decoration: none;
+            padding: 16px 32px;
+            font-size: 1.1em;
+            width: auto;
             display: inline-block;
-        }
-        .btn:hover {
-            background: #ffed4a;
-            transform: translateY(-2px);
-        }
-        .btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-create {
-            background: #3498db;
-            color: white;
-            font-size: 16px;
-            padding: 12px 30px;
-            margin-top: 20px;
-        }
-        .btn-create:hover {
-            background: #2980b9;
-        }
-        .info-text {
-            color: #aaa;
-            font-size: 14px;
-            margin: 10px 0;
-        }
-        .refresh-btn {
-            background: transparent;
-            border: 1px solid #ffd700;
-            color: #ffd700;
-            padding: 5px 15px;
-            border-radius: 4px;
+            margin: 20px auto;
+            border-radius: 40px;
             cursor: pointer;
-            margin-left: 10px;
+            transition: all 0.3s;
         }
-        .refresh-btn:hover {
-            background: #ffd700;
+
+        .btn-create:hover {
+            background: #e5c158;
+            transform: scale(1.02);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            background: #2a2a2a;
+            border-radius: 16px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #d4af37;
+            border: none;
             color: #1a1a1a;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+            background: #e5c158;
+        }
+
+        .info-text {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header-actions .btn {
+            width: auto;
+            padding: 8px 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .refresh-btn {
+                bottom: 20px;
+                right: 20px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>♟️ Quiet Chess ロビー</h1>
+        <h1>♟️ Quiet Chess</h1>
+        <div class="subtitle">静寂の中で、自分の思考を打つ、相手の予想を打つ。</div>
         
-        <div style="text-align: right; margin-bottom: 10px;">
-            <button class="refresh-btn" onclick="location.reload()">🔄 更新</button>
+        <div class="header-actions">
+            <button class="btn" onclick="location.reload()">🔄 更新</button>
+            <button class="btn btn-create" onclick="createRoom()" style="width: auto;">➕ 新しい部屋を作る</button>
         </div>
         
         <%
@@ -129,21 +262,15 @@
             Map<String, Object> rooms = RoomManager.getAllRoomsInfo();
         %>
         
-        <table>
-            <tr>
-                <th>部屋番号</th>
-                <th>人数</th>
-                <th>状態</th>
-                <th>操作</th>
-            </tr>
-            
-            <% if (rooms.isEmpty()) { %>
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 40px; color: #666;">
-                        部屋がありません。「新しい部屋を作る」をクリックしてください
-                    </td>
-                </tr>
-            <% } else { %>
+        <% if (rooms.isEmpty()) { %>
+            <div class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 20px;">🏠</div>
+                <div style="font-size: 1.2em; margin-bottom: 10px;">部屋がありません</div>
+                <div style="color: #888; margin-bottom: 30px;">「新しい部屋を作る」をクリックして開始してください</div>
+                <button class="btn btn-create" onclick="createRoom()">➕ 新しい部屋を作る</button>
+            </div>
+        <% } else { %>
+            <div class="room-grid">
                 <% for (Map.Entry<String, Object> entry : rooms.entrySet()) { 
                     String roomId = entry.getKey();
                     Map<String, Object> info = (Map<String, Object>) entry.getValue();
@@ -152,47 +279,55 @@
                     
                     String statusText = "";
                     String statusClass = "";
+                    String cardClass = "";
+                    
                     if (playerCount == 0) {
                         statusText = "空き";
                         statusClass = "status-empty";
+                        cardClass = "empty";
                     } else if (playerCount == 1) {
                         statusText = "待機中";
                         statusClass = "status-waiting";
+                        cardClass = "waiting";
                     } else {
                         statusText = "対局中";
                         statusClass = "status-playing";
+                        cardClass = "playing";
                     }
                 %>
-                <tr>
-                    <td><%= roomId %></td>
-                    <td><%= playerCount %>/2</td>
-                    <td>
-                        <span class="room-status <%= statusClass %>"><%= statusText %></span>
-                        <% if (!"ACTIVE".equals(status)) { %>
-                            <span style="margin-left: 5px; font-size: 12px;">(終了)</span>
-                        <% } %>
-                    </td>
-                    <td>
-                        <% if (playerCount < 2) { %>
-                            <button class="btn" onclick="joinRoom('<%= roomId %>')">🔰 入室</button>
-                        <% } else { %>
-                            <button class="btn" disabled>⛔ 満室</button>
-                        <% } %>
-                    </td>
-                </tr>
+                <div class="room-card <%= cardClass %>">
+                    <div class="room-id">🚪 <%= roomId %></div>
+                    <div class="room-info">
+                        <span class="player-count">👥 <%= playerCount %>/2</span>
+                        <span class="status-badge <%= statusClass %>"><%= statusText %></span>
+                    </div>
+                    <% if (!"ACTIVE".equals(status)) { %>
+                        <div style="color: #888; font-size: 0.8em; margin-bottom: 10px;">⚡ 対局終了</div>
+                    <% } %>
+                    
+                    <% if (playerCount < 2) { %>
+                        <button class="btn" onclick="joinRoom('<%= roomId %>')">🔰 この部屋に入る</button>
+                    <% } else { %>
+                        <button class="btn" disabled>⛔ 満室</button>
+                    <% } %>
+                </div>
                 <% } %>
-            <% } %>
-        </table>
-        
-        <button class="btn btn-create" onclick="createRoom()">➕ 新しい部屋を作る</button>
+            </div>
+        <% } %>
         
         <div class="info-text">
             ⏰ 5分以上アクティブがない部屋は自動的に削除されます
         </div>
     </div>
 
+    <button class="refresh-btn" onclick="location.reload()">🔄</button>
+
     <script>
         function joinRoom(roomId) {
+            const btn = event.target;
+            btn.textContent = '入室中...';
+            btn.disabled = true;
+            
             fetch('<%= request.getContextPath() %>/joinRoom?roomId=' + roomId)
                 .then(res => res.json())
                 .then(data => {
@@ -205,10 +340,15 @@
                 })
                 .catch(err => {
                     alert('通信エラー、再試行してください');
+                    location.reload();
                 });
         }
         
         function createRoom() {
+            const btn = event.target;
+            btn.textContent = '作成中...';
+            btn.disabled = true;
+            
             fetch('<%= request.getContextPath() %>/createRoom')
                 .then(res => res.json())
                 .then(data => {
@@ -216,6 +356,7 @@
                 })
                 .catch(err => {
                     alert('部屋の作成に失敗しました');
+                    location.reload();
                 });
         }
         

@@ -7,13 +7,86 @@
     <meta charset="UTF-8">
     <title>Replay - Quiet Chess</title>
     <style>
-        body { background: #111; color: #eee; font-family: sans-serif; text-align: center; }
-        .board { display: grid; grid-template-columns: repeat(8, 60px); width: 480px; margin: 24px auto; }
-        .square { width:60px; height:60px; display:flex; align-items:center; justify-content:center; font-size:40px; }
-        .light { background: #f0d9b5; color: #333; }
-        .dark { background: #b58863; color: #111; }
-        .controls { margin-top:12px; }
-        .highlight { outline: 3px solid #00ffff; outline-offset: -3px; }
+        body { 
+            background: #121212; 
+            color: #dcdcdc; 
+            font-family: 'Sawarabi Mincho', serif; 
+            text-align: center;
+            margin: 0;
+        }
+
+        h2 {
+            color: #d4af37;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .board { 
+            display: grid; 
+            grid-template-columns: repeat(8, 60px); 
+            width: 480px; 
+            margin: 20px auto; 
+            border: 2px solid #333;
+        }
+
+        .square { 
+            width: 60px; 
+            height: 60px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 42px; 
+        }
+
+        .light { background: #f0d9b5; }
+        .dark { background: #b58863; }
+        .highlight { outline: 3px solid #ffd700; outline-offset: -3px; }
+
+        .controls { 
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: transparent;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #d4af37;
+            color: #121212;
+        }
+
+        .btn:disabled {
+            border-color: #666;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        #speed {
+            margin-left: 10px;
+            padding: 4px;
+            width: 150px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #d4af37;
+        }
+
+        .info-text {
+            margin-top: 15px;
+            color: #888;
+            font-size: 0.85em;
+        }
     </style>
 </head>
 <body>
@@ -38,16 +111,18 @@
     </div>
 
     <div class="controls">
-        <button id="btnPrev">◀ PREV</button>
-        <button id="btnPlay">▶ PLAY</button>
-        <button id="btnPause" disabled>⏸ PAUSE</button>
-        <button id="btnNext">NEXT ▶</button>
-        <button id="btnRestart">↺ RESTART</button>
-        <button id="btnBack" onclick="location.href='<%= request.getContextPath() %>/game'">↩ BACK TO GAME</button>
-        SPEED: <input id="speed" type="range" min="200" max="2000" step="100" value="800">
+        <button class="btn" id="btnPrev">◀ PREV</button>
+        <button class="btn" id="btnPlay">▶ PLAY</button>
+        <button class="btn" id="btnPause" disabled>⏸ PAUSE</button>
+        <button class="btn" id="btnNext">NEXT ▶</button>
+        <button class="btn" id="btnRestart">↺ RESTART</button>
+        <button class="btn" id="btnBack" onclick="location.href='<%= request.getContextPath() %>/game'">↩ BACK TO GAME</button>
+        <div style="margin-top: 12px; color: #888; font-size: 0.85em;">
+            SPEED: <input id="speed" type="range" min="200" max="2000" step="100" value="800">
+        </div>
     </div>
 
-    <div style="margin-top:10px; color:#bbb; font-size:14px;">共 <span id="total">0</span> 步，当前步: <span id="current">0</span></div>
+    <div class="info-text">共 <span id="total">0</span> 步、当前: <span id="current">0</span></div>
 
     <script>
         // The basic path to the API provided for static scripting（including context path）

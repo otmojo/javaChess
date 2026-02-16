@@ -320,16 +320,13 @@
                 if (status !== 'ACTIVE') {
                     if (!sessionStorage.getItem('gameEnded_' + ROOM_ID)) {
                         let message = '';
-                        let isWinner = false;
                         
                         if (status === 'WHITE_WON') {
-                            isWinner = (winner === 'white' && MY_SIDE === 1) || 
-                                      (winner === 'black' && MY_SIDE === 2);
-                            message = isWinner ? 'あなたの勝ちです！' : '白の勝ち';
+                            const isWinner = (MY_SIDE === 1);
+                            message = isWinner ? 'あなたの勝ちです！' : '白の勝ち（あなたの負けです）';
                         } else if (status === 'BLACK_WON') {
-                            isWinner = (winner === 'black' && MY_SIDE === 2) || 
-                                      (winner === 'white' && MY_SIDE === 1);
-                            message = isWinner ? 'あなたの勝ちです！' : '黒の勝ち';
+                            const isWinner = (MY_SIDE === 2);
+                            message = isWinner ? 'あなたの勝ちです！' : '黒の勝ち（あなたの負けです）';
                         } else if (status === 'DRAW') {
                             message = '引き分け';
                         }

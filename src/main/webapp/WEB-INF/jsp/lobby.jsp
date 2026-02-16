@@ -14,9 +14,9 @@
         }
 
         body {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            color: #eee;
-            font-family: 'Sawarabi Mincho', 'Segoe UI', sans-serif;
+            background-color: #121212;
+            color: #dcdcdc;
+            font-family: 'Sawarabi Mincho', serif;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -27,12 +27,9 @@
         .container {
             max-width: 900px;
             width: 100%;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
+            background: transparent;
             padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            border: 1px solid #444;
+            text-align: center;
         }
 
         h1 {
@@ -59,18 +56,16 @@
         }
 
         .room-card {
-            background: #2a2a2a;
-            border-radius: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
             padding: 20px;
             transition: all 0.3s;
-            border: 1px solid #3a3a3a;
+            border: 1px solid #333;
             position: relative;
             overflow: hidden;
         }
 
         .room-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
             border-color: #d4af37;
         }
 
@@ -106,13 +101,14 @@
         .player-count {
             background: #333;
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: 4px;
             color: #fff;
+            font-size: 0.85em;
         }
 
         .status-badge {
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: 4px;
             font-size: 0.8em;
             font-weight: 500;
         }
@@ -137,7 +133,7 @@
             border: 1px solid #d4af37;
             color: #d4af37;
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 0.95em;
             transition: all 0.3s;
@@ -147,7 +143,7 @@
 
         .btn:hover {
             background: #d4af37;
-            color: #1a1a1a;
+            color: #121212;
         }
 
         .btn:disabled {
@@ -157,30 +153,31 @@
         }
 
         .btn-create {
-            background: #d4af37;
-            color: #1a1a1a;
-            border: none;
-            padding: 16px 32px;
-            font-size: 1.1em;
+            background: transparent;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 12px 32px;
+            font-size: 1em;
             width: auto;
             display: inline-block;
             margin: 20px auto;
-            border-radius: 40px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s;
+            font-family: inherit;
         }
 
         .btn-create:hover {
-            background: #e5c158;
-            transform: scale(1.02);
+            background: #d4af37;
+            color: #121212;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #666;
-            background: #2a2a2a;
-            border-radius: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
         }
 
         .refresh-btn {
@@ -192,7 +189,7 @@
             border-radius: 50%;
             background: #d4af37;
             border: none;
-            color: #1a1a1a;
+            color: #121212;
             font-size: 24px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
@@ -246,12 +243,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>♟️ Quiet Chess</h1>
+        <h1>Quiet Chess</h1>
         <div class="subtitle">静寂の中で、自分の思考を打つ、相手の予想を打つ。</div>
         
         <div class="header-actions">
-            <button class="btn" onclick="location.reload()">🔄 更新</button>
-            <button class="btn btn-create" onclick="createRoom()" style="width: auto;">➕ 新しい部屋を作る</button>
+            <button class="btn" onclick="location.reload()">更新</button>
+            <button class="btn btn-create" onclick="createRoom()" style="width: auto;">新しい部屋を作る</button>
         </div>
         
         <%
@@ -264,10 +261,9 @@
         
         <% if (rooms.isEmpty()) { %>
             <div class="empty-state">
-                <div style="font-size: 48px; margin-bottom: 20px;">🏠</div>
                 <div style="font-size: 1.2em; margin-bottom: 10px;">部屋がありません</div>
                 <div style="color: #888; margin-bottom: 30px;">「新しい部屋を作る」をクリックして開始してください</div>
-                <button class="btn btn-create" onclick="createRoom()">➕ 新しい部屋を作る</button>
+                <button class="btn btn-create" onclick="createRoom()">新しい部屋を作る</button>
             </div>
         <% } else { %>
             <div class="room-grid">
@@ -296,19 +292,19 @@
                     }
                 %>
                 <div class="room-card <%= cardClass %>">
-                    <div class="room-id">🚪 <%= roomId %></div>
+                    <div class="room-id"><%= roomId %></div>
                     <div class="room-info">
-                        <span class="player-count">👥 <%= playerCount %>/2</span>
+                        <span class="player-count"><%= playerCount %>/2</span>
                         <span class="status-badge <%= statusClass %>"><%= statusText %></span>
                     </div>
                     <% if (!"ACTIVE".equals(status)) { %>
-                        <div style="color: #888; font-size: 0.8em; margin-bottom: 10px;">⚡ 対局終了</div>
+                        <div style="color: #888; font-size: 0.8em; margin-bottom: 10px;">対局終了</div>
                     <% } %>
                     
                     <% if (playerCount < 2) { %>
-                        <button class="btn" onclick="joinRoom('<%= roomId %>')">🔰 この部屋に入る</button>
+                        <button class="btn" onclick="joinRoom('<%= roomId %>')">この部屋に入る</button>
                     <% } else { %>
-                        <button class="btn" disabled>⛔ 満室</button>
+                        <button class="btn" disabled>満室</button>
                     <% } %>
                 </div>
                 <% } %>
@@ -316,11 +312,11 @@
         <% } %>
         
         <div class="info-text">
-            ⏰ 5分以上アクティブがない部屋は自動的に削除されます
+            5分以上アクティブがない部屋は自動的に削除されます
         </div>
     </div>
 
-    <button class="refresh-btn" onclick="location.reload()">🔄</button>
+    <button class="refresh-btn" onclick="location.reload()">↻</button>
 
     <script>
         function joinRoom(roomId) {

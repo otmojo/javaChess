@@ -29,6 +29,34 @@ public class RoomManager {
     // Store last active time for cleanup
     private static final ConcurrentHashMap<String, Long> lastActiveTime = new ConcurrentHashMap<>();
     
+    // 🆕 静态代码块：在类加载时启动清理线程
+    static {
+        startCleanupScheduler();
+    }
+    
+    /**
+     * 🆕 cleaning
+     */
+    private static void startCleanupScheduler() {
+        Thread cleanupThread = new Thread(() -> {
+            while (true) {
+                try {
+                    // checking
+                    Thread.sleep(60 * 1000);
+                    
+                    cleanupInactiveRooms(5);
+                } catch (InterruptedException e) {
+                    System.err.println("Cleanup thread interrupted");
+                    break;
+                }
+            }
+        });
+        
+        cleanupThread.setDaemon(true);
+        cleanupThread.start();
+        System.out.println("🧹 Room cleanup scheduler started (checks every 60s)");
+    }
+    
     /**
      * Get all rooms information
      */
@@ -89,7 +117,7 @@ public class RoomManager {
     }
     
     /**
-     * Clean up inactive rooms
+     * 
      * @param maxInactiveMinutes Maximum inactive minutes
      */
     public static void cleanupInactiveRooms(int maxInactiveMinutes) {
@@ -99,23 +127,23 @@ public class RoomManager {
         System.out.println("🧹 Cleaning inactive rooms...");
         int cleaned = 0;
         
+        
         for (String roomId : playerCounts.keySet()) {
             Long lastActive = lastActiveTime.get(roomId);
             
             // If no activity record or exceeds max inactive time
             if (lastActive == null || (now - lastActive) > maxInactiveMillis) {
-                AtomicInteger count = playerCounts.get(roomId);
                 
-                // Clean empty rooms or long inactive rooms
-                if (count == null || count.get() == 0) {
-                    cleanupRoom(roomId);
-                    cleaned++;
-                    System.out.println("  Cleaned room: " + roomId);
-                }
+                cleanupRoom(roomId);
+                cleaned++;
+                System.out.println("  ✅ Cleaned room: " + roomId + 
+                    " (inactive for " + (lastActive == null ? "unknown" : ((now - lastActive)/1000 + "s")) + ")");
             }
         }
         
-        System.out.println("🧹 Cleanup completed, " + cleaned + " rooms cleaned");
+        if (cleaned > 0) {
+            System.out.println("🧹 Cleanup completed, " + cleaned + " rooms cleaned");
+        }
     }
     
     // ===============================================

@@ -44,6 +44,12 @@
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.3.9</version>
+        </dependency>
+        
 
         <!-- Gson for JSON processing -->
         <dependency>
@@ -56,7 +62,6 @@
     <build>
         <finalName>chess-platform</finalName>
         <plugins>
-            <!--  Maven War Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>

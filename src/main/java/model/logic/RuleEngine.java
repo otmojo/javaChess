@@ -102,7 +102,7 @@ public class RuleEngine {
         if (fRow == tRow && Math.abs(colDiff) == 2) {
             boolean isWhite = Character.isUpperCase(grid[fRow][fCol].charAt(0));
 
-            // checking: the king has moved
+            // cheaking: the king has moved
             if (isWhite && board.isWhiteKingMoved()) return false;
             if (!isWhite && board.isBlackKingMoved()) return false;
 
@@ -134,20 +134,20 @@ public class RuleEngine {
 
 	 private boolean validatePawn(int fRow, int fCol, int tRow, int tCol, String piece, String[][] grid) {
 	     boolean isWhite = Character.isUpperCase(piece.charAt(0));
-	     int direction = isWhite ? -1 : 1; // white pawns move upwards (rows decrease), black pawns move downwards (rows increase).
-	     int startRow = isWhite ? 6 : 1;   // white pawns start at row 6, black pawns 1.
+	     int direction = isWhite ? -1 : 1; // 白兵向上(行减少)，黑兵向下(行增加)
+	     int startRow = isWhite ? 6 : 1;   // 白兵初始行是6，黑兵是1
 	
 	     int rowDiff = tRow - fRow;
 	     int colDiff = tCol - fCol;
 	     String targetPiece = grid[tRow][tCol];
 	
-	     // --- A. go straghtly (move) ---
+	     // --- A. 直走 (移动) ---
 	     if (colDiff == 0) {
-	         // 1. Move one space: The space in front must be empty.
+	         // 1. 走一格：前方必须为空
 	         if (rowDiff == direction && targetPiece.equals("")) {
 	             return true;
 	         }
-	         // 2. Move two spaces initially: the first two spaces must be empty, and the first two spaces must be in the starting row.
+	         // 2. 初始走两格：前方两格都必须为空，且在起始行
 	         if (fRow == startRow && rowDiff == 2 * direction) {
 	             String stepOverPiece = grid[fRow + direction][fCol]; // 经过的那一格
 	             if (targetPiece.equals("") && stepOverPiece.equals("")) {
@@ -155,9 +155,9 @@ public class RuleEngine {
 	             }
 	         }
 	     } 
-	     // --- B. Diagonal movement (captures pieces) ---
+	     // --- B. 斜走 (吃子) ---
 	     else if (Math.abs(colDiff) == 1 && rowDiff == direction) {
-	         // The target square must contain an opponent's piece
+	         // 目标格必须有对方棋子
 	         if (!targetPiece.equals("")) {
 	             return true; // Basic eating logic (not considering "passing soldiers" eating children for the time being)
 	         }

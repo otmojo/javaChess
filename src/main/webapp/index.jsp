@@ -55,7 +55,7 @@
     <h1>Quiet Chess</h1>
     <p>静寂の中で、自分の思考を打つ、相手の予想を打つ。</p>
 
-    <a href="lobby" class="btn">START</a>
+    <a href="game" class="btn">START</a>
 
 </body>
 </html>

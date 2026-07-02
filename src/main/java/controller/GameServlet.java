@@ -3,14 +3,13 @@ package controller;
 import java.io.IOException;
 import java.util.List;
 
-import com.chess.RoomManager;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
 import model.dao.MoveDAO;
 import model.entity.Board;
 import model.logic.RuleEngine;
@@ -27,25 +26,11 @@ public class GameServlet extends HttpServlet {
         
             if ("reset".equals(request.getParameter("action"))) {
                 HttpSession session = request.getSession();
-                String roomId = request.getParameter("roomId");
-                if (roomId == null) {
-                    roomId = (String) session.getAttribute("roomId");
-                }
-                if (roomId == null) {
-                    response.sendRedirect("lobby?error=no_room");
-                    return;
-                }
-                Board newBoard = new Board();
-                RoomManager.setBoard(roomId, newBoard);
-                RoomManager.setTurn(roomId, "white");
-                RoomManager.resetGameStatus(roomId);
-                // ===========================
-                
-                session.setAttribute("board", newBoard); 
+                session.setAttribute("board", new Board()); 
                 session.setAttribute("turn", "white");      
                 // save one round
                 try {
-                    moveDAO.clearMoves(roomId);
+                    moveDAO.clearMoves();
                 } catch (Exception e) {
                     System.err.println("error when the moves got cleared: " + e.getMessage());
                 }
@@ -59,36 +44,23 @@ public class GameServlet extends HttpServlet {
         System.out.println("go into doGet route /game");
         HttpSession session = request.getSession();
 
-        String roomId = request.getParameter("roomId");
-        if (roomId == null) {
-            roomId = (String) session.getAttribute("roomId");
-        }
-        if (roomId == null) {
-            response.sendRedirect("lobby?error=no_room");
-            return;
-        }
-
-        Board board = RoomManager.getBoard(roomId);
-        String turn = RoomManager.getTurn(roomId);
-
+        // 1. default
+        Board board = (Board) session.getAttribute("board");
         if (board == null) {
             board = new Board();
-            RoomManager.setBoard(roomId, board);
-            RoomManager.setTurn(roomId, "white");
-            RoomManager.resetGameStatus(roomId);
-            // ===========================
-            turn = "white";
+            session.setAttribute("board", board);
+            session.setAttribute("turn", "white");
         }
-        
-        session.setAttribute("board", board);
-        session.setAttribute("turn", turn);
 
         // 2. according to action to load history
         String action = request.getParameter("action");
         if ("history".equals(action)) {
-            
-            List<String[]> moves = moveDAO.getMoves(roomId); 
-            
+            // use the data firstly(this round)
+            @SuppressWarnings("unchecked")
+            List<String[]> moves = (List<String[]>) session.getAttribute("gameMoves");
+            if (moves == null) {
+                moves = moveDAO.getMoves();
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             for (int i = 0; i < moves.size(); i++) {
@@ -118,8 +90,11 @@ public class GameServlet extends HttpServlet {
 
         // return to all the movements in JSON （for frontend AJAX）
         if ("movesJson".equals(action)) {
-            
-            List<String[]> moves = moveDAO.getMoves(roomId);
+            @SuppressWarnings("unchecked")
+            List<String[]> moves = (List<String[]>) session.getAttribute("gameMoves");
+            if (moves == null) {
+                moves = moveDAO.getMoves();
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             for (int i = 0; i < moves.size(); i++) {
@@ -155,7 +130,7 @@ public class GameServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        // 1. Encoding settings
+        // 1. 必须放在第一行的编码设置
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/plain; charset=UTF-8");
@@ -168,7 +143,7 @@ public class GameServlet extends HttpServlet {
         
         System.out.println("got demand to move -> From(" + fR + "," + fC + ") To(" + tR + "," + tC + ")");
 
-        // 3. Parameter validation
+        // 3. 参数校验
         if (fR == null || fC == null || tR == null || tC == null) {
             System.err.println("ERROR: 参数丢失，POST 数据解析失败！");
             response.setStatus(400);
@@ -178,31 +153,13 @@ public class GameServlet extends HttpServlet {
 
         try {
             HttpSession session = request.getSession();
-            String roomId = request.getParameter("roomId");
-            if (roomId == null) {
-                roomId = (String) session.getAttribute("roomId");
-            }
-            if (roomId == null) {
-                response.setStatus(400);
-                response.getWriter().write("Error: Room ID not found.");
-                return;
-            }
-            
-            // ===== check: game is end or not  =====
-            if (RoomManager.isGameOver(roomId)) {
-                response.setStatus(403);
-                response.getWriter().write("GAME_ALREADY_ENDED");
-                return;
-            }
-            // ================================
-            
             Board board = (Board) session.getAttribute("board");
             if (board == null) {
                 response.setStatus(400);
                 response.getWriter().write("Error: Board not initialized.");
                 return;
             }
-            String turn = (String) session.getAttribute("turn"); // currently which one is allowed to move
+            String turn = (String) session.getAttribute("turn"); // 当前该谁走 "white" 或 "black"
 
             int rF = Integer.parseInt(fR);
             int cF = Integer.parseInt(fC);
@@ -213,17 +170,18 @@ public class GameServlet extends HttpServlet {
             String movingPiece = grid[rF][cF]; // the chosen one
             String targetPiece = grid[rT][cT]; // aim
 
-            // --- 1. Basic check: The starting square must have a piece. ---
+            // --- 1. 基础校验：起始格必须有棋子 ---
             if (movingPiece == null || movingPiece.equals("")) {
                 response.setStatus(400);
                 response.getWriter().write("Error: No piece at source square.");
                 return;
             }
 
-            // --- 2. Round verification ---
+            // --- 2. 回合校验 ---
+            // 假设大写是白棋，小写是黑棋（根据你的 PieceUI 逻辑调整）
             boolean isWhitePiece = Character.isUpperCase(movingPiece.charAt(0));
             if (("white".equals(turn) && !isWhitePiece) || ("black".equals(turn) && isWhitePiece)) {
-                response.setStatus(403); // frobid
+                response.setStatus(403); // 禁止操作
                 response.getWriter().write("对方のターンです");
                 return;
             }
@@ -233,16 +191,22 @@ public class GameServlet extends HttpServlet {
             if (!legal) {
                 response.setStatus(403);
                 response.getWriter().write("不正な移動です (移动不合法)");
-                return; // invalid
+                return; // 拦截非法移动
             }
 
-            // --- 3. Perform a move (via Board.move Piece, handling transposition and promotion). ---
+            // --- 2. 胜负判定 ---
+            String status = "OK";
+            if (targetPiece.equalsIgnoreCase("k")) {
+                status = "GAMEOVER_" + turn; // 抓住了对方的王
+            }
+
+            // --- 3. 执行移动（通过 Board.movePiece，处理易位与升变） ---
             board.movePiece(rF, cF, rT, cT);
 
-            // Save to database (record move)
-            moveDAO.saveMove(roomId, turn, movingPiece, rF, cF, rT, cT);
+            // 保存到数据库（记录移动）
+            moveDAO.saveMove(turn, movingPiece, rF, cF, rT, cT);
 
-            // The game also records moves within the current session, making it easier to replay only the history of that session.
+            // 也在会话中记录本局移动，便于只回放本局历史
             @SuppressWarnings("unchecked")
             java.util.List<String[]> sessionMoves = (java.util.List<String[]>) session.getAttribute("gameMoves");
             if (sessionMoves == null) {
@@ -262,39 +226,14 @@ public class GameServlet extends HttpServlet {
             rec[4] = rT + "," + cT;
             sessionMoves.add(rec);
 
-            // --- 4. results and status =====
-            String status = "OK";
-            
-            // check the king
-            if (targetPiece != null && !targetPiece.equals("")) {
-                if (targetPiece.equalsIgnoreCase("k")) {
-                    status = "GAMEOVER_" + turn;
-                    // set status
-                    if ("white".equals(turn)) {
-                        RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_WHITE_WON);
-                    } else {
-                        RoomManager.setGameStatus(roomId, RoomManager.GAME_STATUS_BLACK_WON);
-                    }
-                    System.out.println("Game Over! Winner: " + turn);
-                }
-            }
-            
-            
-            
-            if (!RoomManager.isGameOver(roomId)) {
-                String nextTurn = "white".equals(turn) ? "black" : "white";
-                session.setAttribute("turn", nextTurn);
-                RoomManager.setTurn(roomId, nextTurn);
-            }
-
+            // --- 4. 切换回合 ---
             session.setAttribute("board", board);
-
-            
-            RoomManager.setBoard(roomId, board);
-            RoomManager.setMove(roomId, rF + "," + cF + "-" + rT + "," + cT);
+            session.setAttribute("turn", "white".equals(turn) ? "black" : "white");
 
             response.setStatus(200);
-            response.getWriter().write(status); // return OK or GAMEOVER
+            response.getWriter().write(status); // 返回 OK 或 GAMEOVER
+
+        
 
         } catch (Exception e) {
             e.printStackTrace();

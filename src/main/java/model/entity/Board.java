@@ -20,16 +20,16 @@ public class Board {
     }
 
     private void setupStandardBoard() {
-        // black
+        // 黑
         grid[0] = new String[]{"r", "n", "b", "q", "k", "b", "n", "r"};
         grid[1] = new String[]{"p", "p", "p", "p", "p", "p", "p", "p"};
 
-        // board
+        // 格
         for (int i = 2; i < 6; i++) {
             for (int j = 0; j < 8; j++) grid[i][j] = "";
         }
 
-        // white
+        // 白
         grid[6] = new String[]{"P", "P", "P", "P", "P", "P", "P", "P"};
         grid[7] = new String[]{"R", "N", "B", "Q", "K", "B", "N", "R"};
     }

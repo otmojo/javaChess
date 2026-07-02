@@ -14,7 +14,6 @@ public class LobbyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        // 转发到 lobby.jsp
         request.getRequestDispatcher("/WEB-INF/jsp/lobby.jsp").forward(request, response);
     }
 }

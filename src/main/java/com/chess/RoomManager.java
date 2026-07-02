@@ -25,17 +25,16 @@ public class RoomManager {
     // Store game status
     private static final ConcurrentHashMap<String, String> gameStatus = new ConcurrentHashMap<>();
     
-    // ========== NEW: Room list management ==========
+    // ========== Room list management ==========
     // Store last active time for cleanup
     private static final ConcurrentHashMap<String, Long> lastActiveTime = new ConcurrentHashMap<>();
     
-    // 🆕 静态代码块：在类加载时启动清理线程
     static {
         startCleanupScheduler();
     }
     
     /**
-     * 🆕 cleaning
+     * clean
      */
     private static void startCleanupScheduler() {
         Thread cleanupThread = new Thread(() -> {
